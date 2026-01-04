@@ -18,8 +18,14 @@ volba = st.sidebar.radio("Přejít na:", ["Přehled ligy", "Analýza týmu", "Na
 # Načtení dat (ošetřené proti chybám)
 def nacti_data(cesta):
     if os.path.exists(cesta):
-        return pd.read_csv(cesta, sep=';')
+        try:
+            # Zkusíme načíst se středníkem (český formát z Pydroidu)
+            return pd.read_csv(cesta, sep=';')
+        except:
+            # Pokud to selže, zkusíme standardní čárku
+            return pd.read_csv(cesta)
     return None
+    
 
 df_hist = nacti_data(PATH_HISTORIE)
 df_tab = nacti_data(PATH_TABULKA)
