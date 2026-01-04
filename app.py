@@ -5,7 +5,7 @@ import os
 # CESTY K SOUBORŮM
 PATH_HISTORIE = 'PL_2526_komplet_vse.csv'
 PATH_TABULKA = 'PL_tabulka_aktualni.csv'
-PATH_KALENDAR = 'PL_kalendar_budouci.csv'
+PATH_KALENDAR = 'PL_kalendar_budouci2.csv'
 
 st.set_page_config(page_title="PL Analytika 2026", layout="wide")
 
