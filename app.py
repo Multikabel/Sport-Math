@@ -38,26 +38,28 @@ df_kal = nacti_data(PATH_KALENDAR)
 if volba == "Přehled ligy":
     st.header("Aktuální pořadí Premier League")
     if df_tab is not None:
-        # Odstraníme zbytečné sloupce hned na začátku
-        if 'Unnamed: 0' in df_tab.columns:
-            df_tab = df_tab.drop(columns=['Unnamed: 0'])
-
-        # KONTROLA SLOUPCŮ: Zkusíme najít body a skóre, i kdyby se jmenovaly jinak
-        # Odstraní mezery z názvů sloupců (častá chyba při exportu z CSV)
+        # 1. Vyčištění názvů sloupců (odstranění mezer)
         df_tab.columns = df_tab.columns.str.strip()
+        
+        # 2. Odstranění starých Unnamed sloupců, pokud existují
+        cols_to_drop = [c for c in df_tab.columns if 'Unnamed' in c]
+        if cols_to_drop:
+            df_tab = df_tab.drop(columns=cols_to_drop)
 
-        # Seřazení - zkontrolujeme, zda sloupce B a S existují
+        # 3. Seřazení podle bodů (B) a skóre (S)
         if 'B' in df_tab.columns and 'S' in df_tab.columns:
             df_tab = df_tab.sort_values(by=['B', 'S'], ascending=False).reset_index(drop=True)
-            df_tab.index += 1
-            df_tab.insert(0, 'Pořadí', df_tab.index)
+            
+            # 4. Vytvoření sloupce Pořadí od 1 do 20
+            df_tab.index += 1  # Posuneme index (0->1, 1->2...)
+            df_tab.insert(0, 'Pořadí', df_tab.index) # Vložíme ho jako první sloupec
+            
+            # 5. Zobrazení - hide_index=True schová ten prázdný sloupec úplně vlevo
             st.dataframe(df_tab, use_container_width=True, hide_index=True)
         else:
-            st.error(f"V souboru chybí sloupce 'B' nebo 'S'. Dostupné sloupce jsou: {list(df_tab.columns)}")
-            # Provizorně zobrazíme tabulku, jak je, abychom viděli, co v ní je
+            st.warning("Tabulku nelze seřadit (chybí sloupce B nebo S).")
             st.write(df_tab)
             
-        
 
 elif volba == "Analýza týmu":
     st.header("Detailní statistiky")
