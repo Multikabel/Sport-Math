@@ -38,27 +38,40 @@ df_kal = nacti_data(PATH_KALENDAR)
 if volba == "Přehled ligy":
     st.header("Aktuální pořadí Premier League")
     if df_tab is not None:
-        # 1. Vyčištění názvů sloupců (odstranění mezer)
-        df_tab.columns = df_tab.columns.str.strip()
+        # 1. Odstraníme úplně prázdné sloupce a řádky
+        df_tab = df_tab.dropna(how='all', axis=1).dropna(how='all', axis=0)
         
-        # 2. Odstranění starých Unnamed sloupců, pokud existují
-        cols_to_drop = [c for c in df_tab.columns if 'Unnamed' in c]
-        if cols_to_drop:
-            df_tab = df_tab.drop(columns=cols_to_drop)
+        # 2. Pokud se sloupce jmenují "Unnamed", zkusíme je přejmenovat podle pořadí
+        # Předpokládáme pořadí z tvého skriptu: Tým, Z, V, R, P, Skóre (S), Body (B)
+        if 'B' not in df_tab.columns:
+            # Přejmenujeme sloupce podle pozice (pokud jich máš v CSV 7 nebo 8)
+            # Uprav si seznam názvů, pokud jich máš víc/míň
+            nove_nazvy = ['Tým', 'Z', 'V', 'R', 'P', 'S', 'B']
+            # Pokud je tam navíc indexový sloupec, přidáme ho na začátek
+            if len(df_tab.columns) == 8:
+                nove_nazvy = ['Starý_Index'] + nove_nazvy
+            
+            df_tab.columns = nove_nazvy[:len(df_tab.columns)]
 
-        # 3. Seřazení podle bodů (B) a skóre (S)
-        if 'B' in df_tab.columns and 'S' in df_tab.columns:
+        # 3. Vyčištění názvů (pro jistotu)
+        df_tab.columns = df_tab.columns.str.strip()
+
+        # 4. Samotné seřazení a zobrazení
+        try:
+            # Převod na čísla (někdy se načtou jako text a pak se špatně řadí)
+            df_tab['B'] = pd.to_numeric(df_tab['B'], errors='coerce')
+            df_tab['S'] = pd.to_numeric(df_tab['S'], errors='coerce')
+            
             df_tab = df_tab.sort_values(by=['B', 'S'], ascending=False).reset_index(drop=True)
+            df_tab.index += 1
+            df_tab.insert(0, 'Pořadí', df_tab.index)
             
-            # 4. Vytvoření sloupce Pořadí od 1 do 20
-            df_tab.index += 1  # Posuneme index (0->1, 1->2...)
-            df_tab.insert(0, 'Pořadí', df_tab.index) # Vložíme ho jako první sloupec
-            
-            # 5. Zobrazení - hide_index=True schová ten prázdný sloupec úplně vlevo
             st.dataframe(df_tab, use_container_width=True, hide_index=True)
-        else:
-            st.warning("Tabulku nelze seřadit (chybí sloupce B nebo S).")
-            st.write(df_tab)
+        except Exception as e:
+            st.error(f"Chyba při zpracování tabulky: {e}")
+            st.write("Aktuální sloupce v souboru:", list(df_tab.columns))
+            st.dataframe(df_tab) # Ukáže tabulku aspoň v surovém stavu
+            
             
 
 elif volba == "Analýza týmu":
