@@ -3,9 +3,9 @@ import pandas as pd
 import os
 
 # CESTY K SOUBORŮM
-PATH_HISTORIE = '/storage/emulated/0/Download/PL_2526_komplet_vse.csv'
-PATH_TABULKA = '/storage/emulated/0/Download/PL_tabulka_aktualni.csv'
-PATH_KALENDAR = '/storage/emulated/0/Download/PL_kalendar_budouci.csv'
+PATH_HISTORIE = 'PL_2526_komplet_vse.csv'
+PATH_TABULKA = 'PL_tabulka_aktualni.csv'
+PATH_KALENDAR = 'PL_kalendar_budouci.csv'
 
 st.set_page_config(page_title="PL Analytika 2026", layout="wide")
 
