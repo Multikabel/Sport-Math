@@ -10,8 +10,7 @@ PATH_KALENDAR = 'PL_kalendar_budouci.csv'
 st.set_page_config(page_title="PL Analytika 2026", layout="wide")
 
 st.title("⚽ Fotbalová Analytická Aplikace")
-import os
-st.write("Soubory v adresáři:", os.listdir("."))
+
 
 # 1. BOČNÍ PANEL
 st.sidebar.header("Navigace")
