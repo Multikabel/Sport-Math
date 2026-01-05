@@ -80,10 +80,23 @@ elif volba == "Analýza týmu":
         st.error("Chybí data pro analýzu.")
 
 elif volba == "Nadcházející zápasy":
-    st.header("Kalendář zápasů")
-    # Automatická detekce oddělovače
-df_fixtures = pd.read_csv('kalendar_budouci2.csv', sep=None, engine='python')
-st.dataframe(df_fixtures, use_container_width=True, hide_index=True)
-
+    st.header("📅 Plán příštích utkání")
+    
+    if df_kal is not None:
+        # Odstranění Unnamed sloupců, pokud existují
+        cols_to_drop = [c for c in df_kal.columns if 'Unnamed' in c]
+        if cols_to_drop:
+            df_kal = df_kal.drop(columns=cols_to_drop)
+            
+        # Zobrazení tabulky
+        st.dataframe(
+            df_kal, 
+            use_container_width=True, 
+            hide_index=True
+        )
+        
+        st.info(f"Zobrazeno {len(df_kal)} nadcházejících zápasů.")
+    else:
+        st.info("Momentálně nejsou k dispozici žádná data o budoucích zápasech.")
 
 
