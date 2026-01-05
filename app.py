@@ -81,9 +81,9 @@ elif volba == "Analýza týmu":
 
 elif volba == "Nadcházející zápasy":
     st.header("Kalendář zápasů")
-    if df_kal is not None and not df_kal.empty:
-        st.table(df_kal)
-    else:
-        st.info("V nejbližších dnech nejsou plánovány žádné ligové zápasy (možná probíhá reprezentační pauza nebo poháry).")
+    # Automatická detekce oddělovače
+df_fixtures = pd.read_csv('kalendar_budouci2.csv', sep=None, engine='python')
+st.dataframe(df_fixtures, use_container_width=True, hide_index=True)
+
 
 
