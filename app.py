@@ -87,7 +87,8 @@ elif volba == "Nadcházející zápasy":
             'AwayTeam': 'Hosté',  # Původní verze
             'Location': 'Stadion',
             'Round Number': 'Kolo',
-            'Day': 'Den'
+            'Day': 'Den',
+            'Result': 'Výsledek'
         }
         
         # Aplikace přejmenování
