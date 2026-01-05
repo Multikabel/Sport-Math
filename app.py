@@ -94,8 +94,6 @@ def nacti_data(cesta):
         st.warning(f"Soubor {cesta} nebyl v adresáři nalezen.")
         return None
 
-# ... (střední část kódu zůstává stejná) ...
-
 # 2. UPRAVENÁ SEKCE PRO KALENDÁŘ
 elif volba == "Nadcházející zápasy":
     st.header("📅 Plán příštích utkání")
