@@ -81,18 +81,6 @@ elif volba == "Analýza týmu":
     else:
         st.error("Chybí data pro analýzu.")
 
-# 1. UPRAVENÁ FUNKCE (sama pozná čárku i středník)
-def nacti_data(cesta):
-    if os.path.exists(cesta):
-        try:
-            # sep=None zajistí automatickou detekci oddělovače
-            return pd.read_csv(cesta, sep=None, engine='python', encoding='utf-8-sig')
-        except Exception as e:
-            st.error(f"Chyba při čtení {cesta}: {e}")
-            return None
-    else:
-        st.warning(f"Soubor {cesta} nebyl v adresáři nalezen.")
-        return None
         
 # 2. UPRAVENÁ SEKCE PRO KALENDÁŘ
 elif volba == "Nadcházející zápasy":
