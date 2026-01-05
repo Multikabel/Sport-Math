@@ -78,10 +78,12 @@ elif volba == "Nadcházející zápasy":
         mapping = {
             'Date': 'Datum',
             'Time': 'Čas',
-            'HomeTeam': 'Domácí',
-            'AwayTeam': 'Hosté',
-            'Venue': 'Stadion',
-            'Wk': 'Kolo'
+            'Home Team': 'Domácí',
+            'Away Team': 'Hosté',
+            'Location': 'Stadion',
+            'Round Number': 'Kolo',
+            'Result': 'Výsledek'
+            
         }
         df_kal = df_kal.rename(columns=mapping)
             
