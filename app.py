@@ -20,14 +20,16 @@ volba = st.sidebar.radio("Přejít na:", ["Přehled ligy", "Analýza týmu", "Na
 def nacti_data(cesta):
     if os.path.exists(cesta):
         try:
-            # Načtení se specifikací kódování a středníku
-            return pd.read_csv(cesta, sep=';', encoding='utf-8-sig')
+            # sep=None a engine='python' zajistí, že si Pandas sám zjistí, 
+            # jestli je to čárka, středník nebo tabulátor
+            return pd.read_csv(cesta, sep=None, engine='python', encoding='utf-8-sig')
         except Exception as e:
             st.error(f"Chyba při čtení {cesta}: {e}")
             return None
     else:
         st.warning(f"Soubor {cesta} nebyl v adresáři nalezen.")
         return None
+        
     
 
 df_hist = nacti_data(PATH_HISTORIE)
