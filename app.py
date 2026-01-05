@@ -81,6 +81,16 @@ elif volba == "Analýza týmu":
 
 elif volba == "Nadcházející zápasy":
     st.header("Kalendář zápasů")
+    df_fixtures = pd.read_csv('kalendar_budouci.csv')
+    sep =';'
+
+    # Pokud má CSV specifický oddělovač (např. středník), přidej: sep=';'
+    
+    # Zobrazení ve formě interaktivní tabulky
+    st.dataframe(df_fixtures, use_container_width=True, hide_index=True)
+
+except FileNotFoundError:
+    st.error("Soubor s nadcházejícími zápasy nebyl nalezen.")
     if df_kal is not None and not df_kal.empty:
         st.table(df_kal)
     else:
