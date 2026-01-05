@@ -75,18 +75,18 @@ elif volba == "Nadcházející zápasy":
         df_kal = df_kal.iloc[:, 1:]
         
         # POMOCNÝ VÝPIS: Smaž tento řádek, až uvidíš názvy na webu
-         st.write("Názvy sloupců v souboru jsou:", list(df_kal.columns))
+        # st.write("Názvy sloupců v souboru jsou:", list(df_kal.columns))
 
         # Přejmenování sloupců - uprav levou stranu podle toho, co vypíše řádek výše
         mapping = {
             'Date': 'Datum',
             'Time': 'Čas',
-            'Home': 'Domácí',     # Zkusil jsem zkrácenou verzi
-            'Away': 'Hosté',      # Zkusil jsem zkrácenou verzi
+            'Home Team': 'Domácí',     # Zkusil jsem zkrácenou verzi
+            'Away Team': 'Hosté',      # Zkusil jsem zkrácenou verzi
             'HomeTeam': 'Domácí', # Původní verze
             'AwayTeam': 'Hosté',  # Původní verze
-            'Venue': 'Stadion',
-            'Wk': 'Kolo',
+            'Location': 'Stadion',
+            'Round Number': 'Kolo',
             'Day': 'Den'
         }
         
