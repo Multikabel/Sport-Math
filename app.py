@@ -81,7 +81,7 @@ elif volba == "Analýza týmu":
 
 elif volba == "Nadcházející zápasy":
     st.header("Kalendář zápasů")
-try df_fixtures = pd.read_csv('kalendar_budouci2.csv')
+try: df_fixtures = pd.read_csv('kalendar_budouci2.csv')
     sep =';'
 
     # Pokud má CSV specifický oddělovač (např. středník), přidej: sep=';'
