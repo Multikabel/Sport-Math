@@ -81,14 +81,41 @@ elif volba == "Analýza týmu":
     else:
         st.error("Chybí data pro analýzu.")
 
+# 1. UPRAVENÁ FUNKCE (sama pozná čárku i středník)
+def nacti_data(cesta):
+    if os.path.exists(cesta):
+        try:
+            # sep=None zajistí automatickou detekci oddělovače
+            return pd.read_csv(cesta, sep=None, engine='python', encoding='utf-8-sig')
+        except Exception as e:
+            st.error(f"Chyba při čtení {cesta}: {e}")
+            return None
+    else:
+        st.warning(f"Soubor {cesta} nebyl v adresáři nalezen.")
+        return None
+
+# ... (střední část kódu zůstává stejná) ...
+
+# 2. UPRAVENÁ SEKCE PRO KALENDÁŘ
 elif volba == "Nadcházející zápasy":
     st.header("📅 Plán příštích utkání")
     
     if df_kal is not None:
-        # Odstranění Unnamed sloupců, pokud existují
-        cols_to_drop = [c for c in df_kal.columns if 'Unnamed' in c]
-        if cols_to_drop:
-            df_kal = df_kal.drop(columns=cols_to_drop)
+        # Odstranění prvního sloupce (často index nebo 'Unnamed')
+        # Dropujeme první sloupec podle pozice (iloc)
+        df_kal = df_kal.iloc[:, 1:]
+        
+        # Přejmenování sloupců do češtiny
+        # Tady si uprav názvy vpravo podle toho, co přesně máš v CSV
+        mapping = {
+            'Date': 'Datum',
+            'Time': 'Čas',
+            'HomeTeam': 'Domácí',
+            'AwayTeam': 'Hosté',
+            'Venue': 'Stadion'
+        }
+        # Přejmenuje jen ty sloupce, které v tabulce skutečně najde
+        df_kal = df_kal.rename(columns=mapping)
             
         # Zobrazení tabulky
         st.dataframe(
@@ -100,5 +127,6 @@ elif volba == "Nadcházející zápasy":
         st.info(f"Zobrazeno {len(df_kal)} nadcházejících zápasů.")
     else:
         st.info("Momentálně nejsou k dispozici žádná data o budoucích zápasech.")
+
 
 
