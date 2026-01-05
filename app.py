@@ -74,20 +74,27 @@ elif volba == "Nadcházející zápasy":
         # Odstranění prvního sloupce (indexu)
         df_kal = df_kal.iloc[:, 1:]
         
-        # Přejmenování sloupců do češtiny
+        # POMOCNÝ VÝPIS: Smaž tento řádek, až uvidíš názvy na webu
+         st.write("Názvy sloupců v souboru jsou:", list(df_kal.columns))
+
+        # Přejmenování sloupců - uprav levou stranu podle toho, co vypíše řádek výše
         mapping = {
             'Date': 'Datum',
             'Time': 'Čas',
-            'Home Team': 'Domácí',
-            'Away Team': 'Hosté',
-            'Location': 'Stadion',
-            'Round Number': 'Kolo',
-            'Result': 'Výsledek'
-            
+            'Home': 'Domácí',     # Zkusil jsem zkrácenou verzi
+            'Away': 'Hosté',      # Zkusil jsem zkrácenou verzi
+            'HomeTeam': 'Domácí', # Původní verze
+            'AwayTeam': 'Hosté',  # Původní verze
+            'Venue': 'Stadion',
+            'Wk': 'Kolo',
+            'Day': 'Den'
         }
+        
+        # Aplikace přejmenování
         df_kal = df_kal.rename(columns=mapping)
             
         st.dataframe(df_kal, use_container_width=True, hide_index=True)
         st.info(f"Zobrazeno {len(df_kal)} nadcházejících zápasů.")
     else:
         st.info("Momentálně nejsou k dispozici žádná data o budoucích zápasech.")
+        
