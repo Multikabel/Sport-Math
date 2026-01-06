@@ -104,29 +104,40 @@ elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
     týmy = sorted(df_hist['HomeTeam'].unique())
     
-    # --- VÝBĚR TÝMŮ A LOGA V JEDNOM ŘÁDKU ---
-    # Horní lišta pro domácí
-    t1 = st.selectbox("Domácí tým (výběr):", týmy, index=0)
+    # --- VÝBĚR TÝMŮ ---
+    t1 = st.selectbox("Vyberte domácí tým:", týmy, index=0)
     
-    # Prostřední řádek s logy
-    col_l, col_empty, col_r = st.columns([1, 2, 1])
+    # --- LOGA V JEDNOM ŘÁDKU (ZAMKNUTO) ---
+    # Vytvoříme 3 sloupce: levý pro logo1, prostřední prázdný/VS, pravý pro logo2
+    col_l, col_m, col_r = st.columns([1, 2, 1])
+    
     with col_l:
         st.image(LOGA_TYMU.get(t1, ""), width=100)
-        st.caption("DOMÁCÍ")
+        st.markdown("<p style='text-align: center; color: gray;'>DOMÁCÍ</p>", unsafe_allow_html=True)
+    
+    with col_m:
+        # Prázdný prostor nebo stylové "VS" uprostřed
+        st.markdown("<h1 style='text-align: center; padding-top: 20px;'>VS</h1>", unsafe_allow_html=True)
+
+    # Definice t2 před vykreslením pravého loga, aby to neházelo chybu
+    # Hostující tým vybereme až pod logy, ale hodnotu potřebujeme pro logo výše
+    # Proto použijeme placeholder nebo dočasnou proměnnou
+    t2_temp = st.session_state.get('t2_select', týmy[1])
+
     with col_r:
-        st.image(LOGA_TYMU.get(t2 if 't2' in locals() else týmy[1], ""), width=100)
-        st.caption("HOSTÉ")
+        st.image(LOGA_TYMU.get(t2_temp, ""), width=100)
+        st.markdown("<p style='text-align: center; color: gray;'>HOSTÉ</p>", unsafe_allow_html=True)
         
-    # Spodní lišta pro hosty
-    t2 = st.selectbox("Hostující tým (výběr):", týmy, index=1)
+    t2 = st.selectbox("Vyberte hostující tým:", týmy, index=1, key='t2_select')
     
     st.write("---")
     
-    # --- VÝPOČTY STATISTIK ---
+    # --- VÝPOČTY (stejné jako předtím) ---
     def get_stats(team):
         d = df_hist[df_hist['HomeTeam'] == team]
         v = df_hist[df_hist['AwayTeam'] == team]
         z = len(d) + len(v)
+        if z == 0: return {"G_vstr":0, "G_ink":0, "Rohy":0, "Karty":0, "Fauly":0}
         return {
             "G_vstr": (d['FTHG'].sum() + v['FTAG'].sum()) / z,
             "G_ink": (d['FTAG'].sum() + v['FTHG'].sum()) / z,
@@ -137,30 +148,23 @@ elif volba == "Simulátor zápasů":
     
     s1, s2 = get_stats(t1), get_stats(t2)
     
-    # --- PREDIKCE SKÓRE ---
-    # Jednoduchý model: (Útok A + Obrana B) / 2
+    # Predikce
     pred_domaci = (s1["G_vstr"] + s2["G_ink"]) / 2
     pred_hoste = (s2["G_vstr"] + s1["G_ink"]) / 2
     
     st.subheader("🎯 Predikce výsledku")
     p1, p2, p3 = st.columns(3)
-    p1.metric(f"Očekávané góly {t1}", round(pred_domaci, 2))
+    p1.metric(f"Góly {t1}", round(pred_domaci, 2))
     p2.metric("Předpokládané skóre", f"{round(pred_domaci)} : {round(pred_hoste)}")
-    p3.metric(f"Očekávané góly {t2}", round(pred_hoste, 2))
+    p3.metric(f"Góly {t2}", round(pred_hoste, 2))
     
     st.write("---")
     
-    # --- SROVNÁVACÍ TABULKA ---
-    st.subheader("📊 Detailní srovnání (Průměry na zápas)")
+    # --- TABULKA SROVNÁNÍ ---
     res_df = pd.DataFrame({
-        "Metrika": ["Vstřelené góly", "Inkasované góly", "Rohové kopy", "Fauly", "Žluté karty"],
+        "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohy", "Fauly", "Žluté karty"],
         t1: [round(s1["G_vstr"], 2), round(s1["G_ink"], 2), round(s1["Rohy"], 2), round(s1["Fauly"], 2), round(s1["Karty"], 2)],
         t2: [round(s2["G_vstr"], 2), round(s2["G_ink"], 2), round(s2["Rohy"], 2), round(s2["Fauly"], 2), round(s2["Karty"], 2)]
     })
     
     st.table(res_df)
-
-    # --- DOPLŇKOVÉ INFO ---
-    st.info(f"Analýza vychází z {len(df_hist)} odehraných zápasů sezóny 25/26.")
-    
-        
