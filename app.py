@@ -111,10 +111,10 @@ elif volba == "Simulátor zápasů":
     # Prostřední řádek s logy
     col_l, col_empty, col_r = st.columns([1, 2, 1])
     with col_l:
-        st.image(LOGA_TYMU.get(t1, ""), width=120)
+        st.image(LOGA_TYMU.get(t1, ""), width=100)
         st.caption("DOMÁCÍ")
     with col_r:
-        st.image(LOGA_TYMU.get(t2 if 't2' in locals() else týmy[1], ""), width=120)
+        st.image(LOGA_TYMU.get(t2 if 't2' in locals() else týmy[1], ""), width=100)
         st.caption("HOSTÉ")
         
     # Spodní lišta pro hosty
