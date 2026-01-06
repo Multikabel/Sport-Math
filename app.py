@@ -7,6 +7,8 @@ PATH_HISTORIE = 'PL_2526_komplet_vse.csv'
 PATH_TABULKA = 'PL_tabulka_aktualni.csv'
 PATH_KALENDAR = 'PL_kalendar_budouci2.csv'
 
+
+
 LOGA_TYMU = {
     "Arsenal": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
     "Aston Villa": "https://play-lh.googleusercontent.com/6J_v7Vn-G477XG1N_vR3S6UvjVnL8pC9pPqI_W6mN6z3P5L5L5L5L5L5L5L5L5L5L5",
@@ -35,8 +37,6 @@ LOGA_TYMU = {
     "Fulham": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3f/Fulham_FC_%28shield%29.svg/200px-Fulham_FC_%28shield%29.svg.png",
     "Burnley": "https://upload.wikimedia.org/wikipedia/en/thumb/6/62/Burnley_F.C._Logo.svg/200px-Burnley_F.C._Logo.svg.png"
 }
-
-
 
 
 st.set_page_config(page_title="PL Analytika 2026", layout="wide")
