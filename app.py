@@ -104,35 +104,39 @@ elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
     týmy = sorted(df_hist['HomeTeam'].unique())
     
-    # --- VÝBĚR TÝMŮ ---
-    t1 = st.selectbox("Vyberte domácí tým:", týmy, index=0)
+    # 1. Lišta pro výběr domácího týmu
+    t1 = st.selectbox("Domácí tým (výběr):", týmy, index=0)
     
-    # --- LOGA V JEDNOM ŘÁDKU (ZAMKNUTO) ---
-    # Vytvoříme 3 sloupce: levý pro logo1, prostřední prázdný/VS, pravý pro logo2
-    col_l, col_m, col_r = st.columns([1, 2, 1])
+    # 2. LOGA V JEDNOM ŘÁDKU (HTML TABULKA - neprůstřelné řešení)
+    # Získáme t2 dříve pro zobrazení loga, nebo použijeme session_state
+    t2_val = st.session_state.get('t2_select', týmy[1])
     
-    with col_l:
-        st.image(LOGA_TYMU.get(t1, ""), width=100)
-        st.markdown("<p style='text-align: center; color: gray;'>DOMÁCÍ</p>", unsafe_allow_html=True)
-    
-    with col_m:
-        # Prázdný prostor nebo stylové "VS" uprostřed
-        st.markdown("<h1 style='text-align: center; padding-top: 20px;'>VS</h1>", unsafe_allow_html=True)
+    logo1 = LOGA_TYMU.get(t1, "")
+    logo2 = LOGA_TYMU.get(t2_val, "")
 
-    # Definice t2 před vykreslením pravého loga, aby to neházelo chybu
-    # Hostující tým vybereme až pod logy, ale hodnotu potřebujeme pro logo výše
-    # Proto použijeme placeholder nebo dočasnou proměnnou
-    t2_temp = st.session_state.get('t2_select', týmy[1])
-
-    with col_r:
-        st.image(LOGA_TYMU.get(t2_temp, ""), width=100)
-        st.markdown("<p style='text-align: center; color: gray;'>HOSTÉ</p>", unsafe_allow_html=True)
+    html_kód = f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
+        <div style="text-align: center;">
+            <img src="{logo1}" width="100"><br>
+            <span style="color: gray; font-size: 0.8rem;">DOMÁCÍ</span>
+        </div>
+        <div style="flex-grow: 1; text-align: center;">
+            <h1 style="margin: 0; font-size: 3rem; color: #555;">VS</h1>
+        </div>
+        <div style="text-align: center;">
+            <img src="{logo2}" width="100"><br>
+            <span style="color: gray; font-size: 0.8rem;">HOSTÉ</span>
+        </div>
+    </div>
+    """
+    st.markdown(html_kód, unsafe_allow_html=True)
         
-    t2 = st.selectbox("Vyberte hostující tým:", týmy, index=1, key='t2_select')
+    # 3. Lišta pro výběr hostujícího týmu
+    t2 = st.selectbox("Hostující tým (výběr):", týmy, index=1, key='t2_select')
     
     st.write("---")
     
-    # --- VÝPOČTY (stejné jako předtím) ---
+    # --- VÝPOČTY STATISTIK (zůstávají stejné) ---
     def get_stats(team):
         d = df_hist[df_hist['HomeTeam'] == team]
         v = df_hist[df_hist['AwayTeam'] == team]
@@ -148,7 +152,7 @@ elif volba == "Simulátor zápasů":
     
     s1, s2 = get_stats(t1), get_stats(t2)
     
-    # Predikce
+    # --- PREDIKCE ---
     pred_domaci = (s1["G_vstr"] + s2["G_ink"]) / 2
     pred_hoste = (s2["G_vstr"] + s1["G_ink"]) / 2
     
@@ -168,3 +172,4 @@ elif volba == "Simulátor zápasů":
     })
     
     st.table(res_df)
+    
