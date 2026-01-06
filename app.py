@@ -5,38 +5,40 @@ import io
 import altair as alt
 import math
 
-# --- 1. KONFIGURACE A POMOCNÉ FUNKCE (Musí být nahoře) ---
+# --- 1. POMOCNÉ FUNKCE A KONFIGURACE ---
 st.set_page_config(page_title="PL Analytika 2026", layout="wide", page_icon="⚽")
 
 def poisson_pmf(k, mu):
-    """Ruční výpočet Poissonova rozdělení (náhrada za scipy)"""
+    """Ruční výpočet Poissonova rozdělení"""
     if mu <= 0: return 1.0 if k == 0 else 0.0
     try:
         return (math.exp(-mu) * (mu**k)) / math.factorial(k)
     except:
         return 0.0
 
+# AKTUALIZOVANÁ LOGA (Leeds, Sunderland, Burnley jsou zpět)
 LOGA_TYMU = {
     "Arsenal": "https://crests.football-data.org/57.png",
     "Aston Villa": "https://crests.football-data.org/58.png",
     "Bournemouth": "https://crests.football-data.org/1044.png",
     "Brentford": "https://crests.football-data.org/402.png",
     "Brighton": "https://crests.football-data.org/397.png",
+    "Burnley": "https://crests.football-data.org/70.png",
     "Chelsea": "https://crests.football-data.org/61.png",
     "Crystal Palace": "https://crests.football-data.org/354.png",
     "Everton": "https://crests.football-data.org/62.png",
     "Fulham": "https://crests.football-data.org/63.png",
+    "Leeds": "https://crests.football-data.org/341.png",
     "Liverpool": "https://crests.football-data.org/64.png",
     "Man City": "https://crests.football-data.org/65.png",
     "Man United": "https://crests.football-data.org/66.png",
     "Newcastle": "https://crests.football-data.org/67.png",
     "Nott'm Forest": "https://crests.football-data.org/351.png",
     "Southampton": "https://crests.football-data.org/340.png",
+    "Sunderland": "https://crests.football-data.org/71.png",
     "Tottenham": "https://crests.football-data.org/73.png",
     "West Ham": "https://crests.football-data.org/563.png",
-    "Wolves": "https://crests.football-data.org/76.png",
-    "Ipswich": "https://crests.football-data.org/349.png",
-    "Leicester": "https://crests.football-data.org/338.png"
+    "Wolves": "https://crests.football-data.org/76.png"
 }
 
 @st.cache_data(ttl=3600)
@@ -138,7 +140,6 @@ elif volba == "Simulátor zápasů":
     s1, s2 = get_stats(t1), get_stats(t2)
     mu_d, mu_h = (s1["G_v"] + s2["G_i"])/2, (s2["G_v"] + s1["G_i"])/2
     
-    # Poisson 1-X-2
     p_d, p_h, p_r = 0, 0, 0
     for i in range(11):
         for j in range(11):
@@ -158,9 +159,8 @@ elif volba == "Simulátor zápasů":
     o2.warning(f"**Remíza**\n{round(p_r * 100, 1)} %")
     o3.error(f"**Výhra {t2}**\n{round(p_h * 100, 1)} %")
     
-    # Karty
     ref_df = df_hist[df_hist['Referee'] == vybrany_ref]
-    ref_zk_avg = (ref_df['HY'].sum() + ref_df['AY'].sum()) / len(ref_df)
+    ref_zk_avg = (ref_df['HY'].sum() + ref_df['AY'].sum()) / len(ref_df) if len(ref_df) > 0 else 0
     ocek_karty = (s1["K"] + s2["K"] + ref_zk_avg) / 1.5
     st.metric("Očekávané ŽK (Týmy + Rozhodčí)", round(ocek_karty, 1))
 
