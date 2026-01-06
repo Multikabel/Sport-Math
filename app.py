@@ -109,66 +109,59 @@ if volba == "Přehled ligy":
         else:
             st.error("Chyba v názvech sloupců tabulky.")
 
-# --- ANALÝZA TÝMU ---
+# --- ANALÝZA TÝMU (HORIZONTÁLNÍ GRAF) ---
 elif volba == "Analýza týmu":
     st.header("📊 Detailní analýza faulů")
     
     if df_hist is not None:
-        # POUŽITÍ PŘESNÝCH NÁZVŮ Z TVÉHO VÝPISU
         col_domaci_tym = "Domaci_Tym"
         col_hoste_tym = "Hoste_Tym"
         col_fauly_domaci = "Fauly_Domaci"
         col_fauly_hoste = "Fauly_Hoste"
 
-        # Ověříme, zda sloupce existují
         if all(c in df_hist.columns for c in [col_domaci_tym, col_hoste_tym, col_fauly_domaci, col_fauly_hoste]):
-            
-            # 1. Výpočet faulů pro domácí týmy
+            # Příprava dat (stejná jako předtím)
             fauly_home = df_hist.groupby(col_domaci_tym)[col_fauly_domaci].sum().reset_index()
             fauly_home.columns = ['Tým', 'Fauly']
-            
-            # 2. Výpočet faulů pro hostující týmy
             fauly_away = df_hist.groupby(col_hoste_tym)[col_fauly_hoste].sum().reset_index()
             fauly_away.columns = ['Tým', 'Fauly']
             
-            # 3. Spojení a celkový součet
             df_total = pd.concat([fauly_home, fauly_away])
             df_an = df_total.groupby('Tým')['Fauly'].sum().reset_index()
-            
-            # Seřazení od nejvíce faulů
-            df_an = df_an.sort_values(by='Fauly', ascending=False)
+            df_an = df_an.sort_values(by='Fauly', ascending=True) # Ascending True pro nejlepší nahoře v horiz. grafu
             
             prumer = df_an['Fauly'].mean()
 
-            # --- GRAF (Altair) ---
             import altair as alt
 
-            # Základní sloupcový graf
+            # HORIZONTÁLNÍ GRAF: Tým na ose Y, Fauly na ose X
             bars = alt.Chart(df_an).mark_bar(color='skyblue').encode(
-                x=alt.X('Tým:N', sort='-y', title='Tým'),
-                y=alt.Y('Fauly:Q', title='Celkový počet faulů')
+                y=alt.Y('Tým:N', sort='-x', title='Tým'),
+                x=alt.X('Fauly:Q', title='Celkový počet faulů')
+            ).properties(
+                height=600  # Vyšší graf, aby se týmy nemačkaly
             )
 
-            # Červená přerušovaná linka průměru
-            line = alt.Chart(pd.DataFrame({'y': [prumer]})).mark_rule(
+            # Svislá linka průměru (protože osa faulů je teď X)
+            line = alt.Chart(pd.DataFrame({'x': [prumer]})).mark_rule(
                 color='red', 
                 strokeDash=[5, 5],
                 size=2
-            ).encode(y='y:Q')
+            ).encode(x='x:Q')
 
-            # Popisek k lince průměru
-            label = alt.Chart(pd.DataFrame({'y': [prumer]})).mark_text(
-                align='left', dx=5, dy=-5, color='red', text=f'Průměr: {prumer:.1f}'
-            ).encode(y='y:Q', x=alt.value(0))
+            # Popisek průměru nahoře
+            label = alt.Chart(pd.DataFrame({'x': [prumer]})).mark_text(
+                align='left', dx=5, dy=-20, color='red', text=f'Průměr: {prumer:.1f}'
+            ).encode(x='x:Q', y=alt.value(0))
 
             st.altair_chart(bars + line + label, use_container_width=True)
 
-            # 4. Tabulka
+            # Tabulka
             st.write(f"**Průměrný celkový počet faulů na tým:** {prumer:.2f}")
-            st.dataframe(df_an, use_container_width=True, hide_index=True)
+            st.dataframe(df_an.sort_values(by='Fauly', ascending=False), use_container_width=True, hide_index=True)
             
         else:
-            st.error("Chyba v detekci sloupců. Zkontrolujte strukturu CSV.")
+            st.error("Chyba v detekci sloupců.")
     else:
         st.info("Soubor PL_2526_komplet_vse.csv nebyl načten.")
         
