@@ -31,7 +31,17 @@ LOGA_TYMU = {
     "Sunderland": "https://upload.wikimedia.org/wikipedia/en/6/60/Sunderland_AFC_logo.svg", # NOVÉ LOGO
     "Tottenham": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
     "West Ham": "https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg",
-    "Wolves": "https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg"
+    "Wolves": "https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg",
+    "Aston Villa": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
+    "Aston Villa ": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
+    "Villa": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
+    "Sunderland": "https://upload.wikimedia.org/wikipedia/en/6/60/Sunderland_AFC_logo.svg",
+    "Sunderland AFC": "https://upload.wikimedia.org/wikipedia/en/6/60/Sunderland_AFC_logo.svg",
+    "Fulham": "https://upload.wikimedia.org/wikipedia/en/3/3f/Fulham_FC_%28shield%29.svg",
+    "Fulham FC": "https://upload.wikimedia.org/wikipedia/en/3/3f/Fulham_FC_%28shield%29.svg",
+    "Burnley": "https://upload.wikimedia.org/wikipedia/en/6/62/Burnley_F.C._Logo.svg",
+    "Burnley FC": "https://upload.wikimedia.org/wikipedia/en/6/62/Burnley_F.C._Logo.svg",
+    
 }
 
 
@@ -115,6 +125,22 @@ elif volba == "Nadcházející zápasy":
             'Result': 'Výsledek'
         }
         df_kal = df_kal.rename(columns=mapping)
+
+        # 1. Agresivní očištění názvů (pro jistotu)
+        df_kal['Domácí'] = df_kal['Domácí'].astype(str).str.strip()
+        df_kal['Hosté'] = df_kal['Hosté'].astype(str).str.strip()
+
+        # 2. Mapování log
+        df_kal[' '] = df_kal['Domácí'].map(LOGA_TYMU)
+        df_kal['  '] = df_kal['Hosté'].map(LOGA_TYMU)
+
+        # 3. DIAGNOSTIKA (Vypíše ti, co přesně chybí)
+        chybejici_domaci = df_kal[df_kal[' '].isna()]['Domácí'].unique()
+        chybejici_hoste = df_kal[df_kal['  '].isna()]['Hosté'].unique()
+        vsechny_chyby = set(list(chybejici_domaci) + list(chybejici_hoste))
+        
+        if vsechny_chyby:
+            st.warning(f"Chybí loga pro tyto týmy: {vsechny_chyby}")
 
         # Přidání sloupců pro loga (mapování na slovník LOGA_TYMU)
         # .str.strip() vymaže náhodné mezery před/za názvem týmu
