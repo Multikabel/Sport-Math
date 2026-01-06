@@ -149,9 +149,9 @@ elif volba == "Nadcházející zápasy":
         df_display = df_kal[[c for c in cols_order if c in df_kal.columns]]
             
         # Finální zobrazení tabulky
-                st.dataframe(
-            df_display, 
-            column_config={
+        st.dataframe(
+        df_display, 
+        column_config={
                 " ": st.column_config.ImageColumn(label=" ", width="small"),
                 "  ": st.column_config.ImageColumn(label=" ", width="small"),
             },
