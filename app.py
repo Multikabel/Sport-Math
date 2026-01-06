@@ -23,11 +23,13 @@ LOGA_TYMU = {
     "Liverpool": "https://crests.football-data.org/64.png",
     "Man City": "https://crests.football-data.org/65.png",
     "Man Utd": "https://crests.football-data.org/66.png",
+    "Man United": "https://crests.football-data.org/66.png",
     "Newcastle": "https://crests.football-data.org/67.png",
     "Nott'm Forest": "https://crests.football-data.org/351.png",
     "Southampton": "https://crests.football-data.org/340.png",
     "Sunderland": "https://crests.football-data.org/71.png",
     "Spurs": "https://crests.football-data.org/73.png",
+    "Tottenham": "https://crests.football-data.org/73.png",
     "West Ham": "https://crests.football-data.org/563.png",
     "Wolves": "https://crests.football-data.org/76.png"
 }
