@@ -109,73 +109,77 @@ if volba == "Přehled ligy":
         else:
             st.error("Chyba v názvech sloupců tabulky.")
 
-# --- ANALÝZA TÝMU (PRŮMĚR NA ZÁPAS S ČÍSLY) ---
-# --- ANALÝZA TÝMU (POMĚR FAULŮ) ---
+# --- ANALÝZA TÝMU (FINÁLNÍ POMĚR FAULŮ) ---
 elif volba == "Analýza týmu":
     st.header("📊 Poměr faulů: Udělané vs. Obdržené (na zápas)")
     
     if df_hist is not None:
-        # Definice sloupců
-        c_dt = "Domaci_Tym"
-        c_ht = "Hoste_Tym"
-        c_fd = "Fauly_Domaci"
-        c_fh = "Fauly_Hoste"
+        c_dt, c_ht, c_fd, c_fh = "Domaci_Tym", "Hoste_Tym", "Fauly_Domaci", "Fauly_Hoste"
 
         if all(c in df_hist.columns for c in [c_dt, c_ht, c_fd, c_fh]):
-            
-            # 1. FAULY UDĚLANÉ (To, co tým spáchal)
-            ud_h = df_hist.groupby(c_dt).agg({c_fd: 'sum', c_dt: 'count'}).rename(columns={c_fd: 'F', c_dt: 'Z'}).reset_index()
-            ud_a = df_hist.groupby(c_ht).agg({c_fh: 'sum', c_ht: 'count'}).rename(columns={c_fh: 'F', c_ht: 'Z'}).reset_index()
-            
-            # 2. FAULY OBDRŽENÉ (To, co udělal soupeř týmu)
-            ob_h = df_hist.groupby(c_dt).agg({c_fh: 'sum'}).rename(columns={c_fh: 'F'}).reset_index()
-            ob_a = df_hist.groupby(c_ht).agg({c_fd: 'sum'}).rename(columns={c_fd: 'F'}).reset_index()
-
-            # Sjednocení do jedné tabulky
+            # 1. Příprava dat (výpočet průměrů)
             týmy = df_hist[c_dt].unique()
             data_list = []
 
             for t in týmy:
-                zápasy = ud_h[ud_h[c_dt]==t]['Z'].sum() + ud_a[ud_a[c_ht]==t]['Z'].sum()
-                f_udělané = ud_h[ud_h[c_dt]==t]['F'].sum() + ud_a[ud_a[c_ht]==t]['F'].sum()
-                f_obdržené = ob_h[ob_h[c_dt]==t]['F'].sum() + ob_a[ob_a[c_ht]==t]['F'].sum()
+                # Počet zápasů
+                z = len(df_hist[(df_hist[c_dt] == t) | (df_hist[c_ht] == t)])
+                # Udělané fauly (vlastní fauly doma + vlastní fauly venku)
+                f_ud = df_hist[df_hist[c_dt] == t][c_fd].sum() + df_hist[df_hist[c_ht] == t][c_fh].sum()
+                # Obdržené fauly (fauly soupeře, když tým hraje doma + fauly soupeře venku)
+                f_ob = df_hist[df_hist[c_dt] == t][c_fh].sum() + df_hist[df_hist[c_ht] == t][c_fd].sum()
                 
-                # Přidáme dva řádky pro každý tým (jeden pro Udělané, jeden pro Obdržené)
-                data_list.append({'Tým': t, 'Typ': 'Udělané', 'Hodnota': f_udělané/zápasy})
-                data_list.append({'Tým': t, 'Typ': 'Obdržené', 'Hodnota': f_obdržené/zápasy})
+                data_list.append({'Tým': t, 'Typ': 'Udělané', 'Hodnota': f_ud/z})
+                data_list.append({'Tým': t, 'Typ': 'Obdržené', 'Hodnota': f_ob/z})
 
             df_plot = pd.DataFrame(data_list)
 
             import altair as alt
 
-            # GRAF
+            # ZÁKLAD GRAFU
+            # Seřazeno podle součtu obou hodnot (celková šířka sloupce)
             base = alt.Chart(df_plot).encode(
-                y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending"), title="Tým"),
-                x=alt.X('Hodnota:Q', title='Průměr faulů na zápas'),
+                y=alt.Y('Tým:N', 
+                        sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending"), 
+                        title=None),
+                x=alt.X('Hodnota:Q', 
+                        title='Průměr faulů na zápas',
+                        stack='zero'),
                 color=alt.Color('Typ:N', 
-                                scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), # Zelená a červená
-                                legend=alt.Legend(title="Typ faulů"))
+                                scale=alt.Scale(domain=['Udělané', 'Obdržené'], 
+                                              range=['#2ca02c', '#d62728']),
+                                legend=alt.Legend(
+                                    orient='top',      # Legenda nad grafem
+                                    direction='horizontal',
+                                    title=None
+                                ))
             )
 
-            # Sloupce (Stacked Bar)
+            # 2. SLOUPEČKY (Širší graf díky use_container_width)
             bars = base.mark_bar().properties(height=700)
 
-            # Čísla uvnitř sloupců
+            # 3. ČÍSLA ZAROVNANÁ KE KRAJŮM
+            # Udělané (zelená) -> zarovnání doleva (start sloupce)
+            # Obdržené (červená) -> zarovnání doprava (konec sloupce)
             text = base.mark_text(
-                align=alt.expr("datum.Typ == 'Udělané' ? 'left' : 'right'"),
                 baseline='middle',
-                dx=alt.expr("datum.Typ == 'Udělané' ? 5 : -5"),
+                fontSize=12,
+                fontWeight='bold',
                 color='white',
-                fontWeight='bold'
+                # Dynamické odsazení: Udělané kousek od levého okraje, Obdržené kousek od pravého
+                dx=alt.expr("datum.Typ == 'Udělané' ? 25 : -25"), 
+                align=alt.expr("datum.Typ == 'Udělané' ? 'left' : 'right'")
             ).encode(
-                text=alt.Text('Hodnota:Q', format='.2f')
+                text=alt.Text('Hodnota:Q', format='.1f'),
+                # Zajistíme, aby text zůstal ve své barevné části při stackování
+                detail='Typ:N' 
             )
 
             st.altair_chart(bars + text, use_container_width=True)
             
         else:
             st.error("Chyba v detekci sloupců.")
-
+                
 
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
