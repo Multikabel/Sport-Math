@@ -171,11 +171,17 @@ elif volba == "Simulátor zápasů":
 
     s1, s2 = get_stats(t1), get_stats(t2)
     
-    # --- VÝPOČTY PREDIKCÍ (GÓLY, KARTY, FAULY) ---
+        # --- VÝPOČTY PREDIKCÍ (GÓLY, KARTY, FAULY, ROHY) ---
     mu_d = (s1["G_v"] + s2["G_i"]) / 2
     mu_h = (s2["G_v"] + s1["G_i"]) / 2
     
-    # Statistiky rozhodčího
+    # Predikce rohů (Kolik domácí kopou + kolik hosté pouští / 2)
+    # Pro přesnější výpočet bereme průměry z obou stran
+    ocek_rohy_t1 = (s1["R"] + s2["R"]) / 2 # Zjednodušený model pro rohy
+    ocek_rohy_t2 = (s2["R"] + s1["R"]) / 2
+    celkem_rohy = ocek_rohy_t1 + ocek_rohy_t2
+    
+    # Statistiky rozhodčího (pro karty a fauly)
     ref_df = df_hist[df_hist['Referee'] == vybrany_ref]
     ref_zapasu = len(ref_df)
     if ref_zapasu > 0:
@@ -184,18 +190,8 @@ elif volba == "Simulátor zápasů":
     else:
         ref_zk_avg, ref_f_avg = 0, 0
 
-    # Kombinované predikce
     ocek_karty = (s1["K"] + s2["K"] + ref_zk_avg) / 1.5
     ocek_fauly = (s1["F"] + s2["F"] + ref_f_avg) / 1.5
-
-    # Poissonův výpočet pravděpodobností (1-X-2)
-    p_d, p_h, p_r = 0, 0, 0
-    for i in range(11):
-        for j in range(11):
-            p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
-            if i > j: p_d += p
-            elif i < j: p_h += p
-            else: p_r += p
 
     # --- ZOBRAZENÍ VÝSLEDKŮ ---
     st.subheader("🎯 Predikce zápasu")
@@ -212,27 +208,22 @@ elif volba == "Simulátor zápasů":
     o2.warning(f"**Remíza**\n{round(p_r * 100, 1)} %")
     o3.error(f"**Výhra {t2}**\n{round(p_h * 100, 1)} %")
     
-    # Řada 3: Disciplína
+    # Řada 3: Rohy (NOVINKA)
     st.write("---")
+    st.markdown("### 🚩 Rohové kopy")
+    r1, r2, r3 = st.columns(3)
+    r1.metric(f"Rohy {t1}", round(ocek_rohy_t1, 1))
+    r2.metric("CELKEM ROHŮ", round(celkem_rohy, 1))
+    r3.metric(f"Rohy {t2}", round(ocek_rohy_t2, 1))
+
+    # Řada 4: Disciplína
+    st.write("---")
+    st.markdown("### ⚖️ Disciplína")
     f1, f2, f3 = st.columns(3)
     f1.metric("Očekávané ŽK", round(ocek_karty, 1))
     f2.metric("Očekávané FAULY", round(ocek_fauly, 1))
     f3.metric("Průměr faulů Ref.", round(ref_f_avg, 1))
 
-    # Barometr faulů
-    if ocek_fauly > 25:
-        st.warning(f"⚠️ **Pozor na fauly!** Očekává se kouskovaná hra ({round(ocek_fauly, 1)} faulů).")
-    elif ocek_fauly < 18:
-        st.success(f"🏃 **Plynulá hra.** Očekává se čistý zápas ({round(ocek_fauly, 1)} faulů).")
-
-    # --- SROVNÁVACÍ TABULKA A FORMA ---
-    st.subheader("📊 Srovnání a Forma")
-    st.write(f"**Forma {t1}:** {ziskej_formu(t1, df_hist)} | **Forma {t2}:** {ziskej_formu(t2, df_hist)}")
-    
-    res_df = pd.DataFrame({
-        "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohové kopy", "Fauly", "Žluté karty"],
-        t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)],
-        t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]
-    })
-    st.table(res_df)
-    
+    # Barometr rohů
+    if celkem_rohy > 10.5:
+        st.info(f"📈 **Aktivní křídla!** Očekává se nadprůměrný počet rohů ({round(celkem_rohy, 1)}).")
