@@ -7,6 +7,31 @@ PATH_HISTORIE = 'PL_2526_komplet_vse.csv'
 PATH_TABULKA = 'PL_tabulka_aktualni.csv'
 PATH_KALENDAR = 'PL_kalendar_budouci2.csv'
 
+LOGA_TYMU = {
+    "Arsenal": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
+    "Aston Villa": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
+    "Bournemouth": "https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg",
+    "Brentford": "https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg",
+    "Brighton": "https://upload.wikimedia.org/wikipedia/en/f/fd/Brighton_%26_Hove_Albion_logo.svg",
+    "Burnley": "https://upload.wikimedia.org/wikipedia/en/6/62/Burnley_F.C._Logo.svg", # NOVÝ
+    "Chelsea": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
+    "Crystal Palace": "https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg",
+    "Everton": "https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg",
+    "Fulham": "https://upload.wikimedia.org/wikipedia/en/3/3f/Fulham_FC_%28shield%29.svg",
+    "Leeds": "https://upload.wikimedia.org/wikipedia/en/5/54/Leeds_United_F.C._logo.svg", # NOVÝ (zkontroluj zda nemáš jen "Leeds")
+    "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
+    "Man City": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
+    "Man United": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
+    "Newcastle": "https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg",
+    "Nott'm Forest": "https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg",
+    "Southampton": "https://upload.wikimedia.org/wikipedia/en/c/c9/Southampton_FC.svg",
+    "Tottenham": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
+    "West Ham": "https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg",
+    "Wolves": "https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg"
+}
+
+
+
 st.set_page_config(page_title="PL Analytika 2026", layout="wide")
 
 st.title("⚽ Fotbalová Analytická Aplikace")
@@ -74,27 +99,41 @@ elif volba == "Nadcházející zápasy":
         # Odstranění prvního sloupce (indexu)
         df_kal = df_kal.iloc[:, 1:]
         
-        # POMOCNÝ VÝPIS: Smaž tento řádek, až uvidíš názvy na webu
-        # st.write("Názvy sloupců v souboru jsou:", list(df_kal.columns))
-
-        # Přejmenování sloupců - uprav levou stranu podle toho, co vypíše řádek výše
+        # Přejmenování základních sloupců
         mapping = {
             'Date': 'Datum',
             'Time': 'Čas',
-            'Home Team': 'Domácí',     # Zkusil jsem zkrácenou verzi
-            'Away Team': 'Hosté',      # Zkusil jsem zkrácenou verzi
-            'HomeTeam': 'Domácí', # Původní verze
-            'AwayTeam': 'Hosté',  # Původní verze
+            'Home Team': 'Domácí',
+            'Away Team': 'Hosté',
             'Location': 'Stadion',
             'Round Number': 'Kolo',
-            'Day': 'Den',
             'Result': 'Výsledek'
         }
-        
-        # Aplikace přejmenování
         df_kal = df_kal.rename(columns=mapping)
+
+        # Přidání sloupců pro loga (mapování na slovník LOGA_TYMU)
+        # .str.strip() vymaže náhodné mezery před/za názvem týmu
+        df_kal[' '] = df_kal['Domácí'].str.strip().map(LOGA_TYMU)
+        df_kal['  '] = df_kal['Hosté'].str.strip().map(LOGA_TYMU)
+
+        # Definice pořadí sloupců (loga jsou u názvů týmů)
+        # Sloupce se jmenují ' ' a '  ', aby v tabulce nezabíraly místo textem
+        cols_order = ['Datum', 'Čas', ' ', 'Domácí', 'Hosté', '  ', 'Stadion']
+        
+        # Vybereme jen ty sloupce, které v tabulce po přejmenování skutečně existují
+        df_display = df_kal[[c for c in cols_order if c in df_kal.columns]]
             
-        st.dataframe(df_kal, use_container_width=True, hide_index=True)
+        # Finální zobrazení tabulky
+        st.dataframe(
+            df_display, 
+            column_config={
+                " ": st.column_config.ImageColumn(label=None, width="small"),
+                "  ": st.column_config.ImageColumn(label=None, width="small"),
+            },
+            use_container_width=True, 
+            hide_index=True
+        )
+        
         st.info(f"Zobrazeno {len(df_kal)} nadcházejících zápasů.")
     else:
         st.info("Momentálně nejsou k dispozici žádná data o budoucích zápasech.")
