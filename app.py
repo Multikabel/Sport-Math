@@ -21,36 +21,54 @@ LOGA_TYMU = {
     "Leeds": "https://crests.football-data.org/341.png",
     "Liverpool": "https://crests.football-data.org/64.png",
     "Man City": "https://crests.football-data.org/65.png",
+    "Man United": "https://crests.football-data.org/66.png",
     "Man Utd": "https://crests.football-data.org/66.png",
-    "Man United": "https://crests.football-data.org/66.png", # Doplněno
     "Newcastle": "https://crests.football-data.org/67.png",
     "Nott'm Forest": "https://crests.football-data.org/351.png",
     "Southampton": "https://crests.football-data.org/340.png",
     "Sunderland": "https://crests.football-data.org/71.png",
     "Spurs": "https://crests.football-data.org/73.png",
-    "Tottenham": "https://crests.football-data.org/73.png", # Doplněno
+    "Tottenham": "https://crests.football-data.org/73.png",
     "West Ham": "https://crests.football-data.org/563.png",
     "Wolves": "https://crests.football-data.org/76.png"
 }
 
+# Sjednocení názvů pro rozpis (FixtureDownload -> Football-Data)
+MAPOVANI_NAZVU = {
+    "Manchester City": "Man City",
+    "Manchester United": "Man United",
+    "Tottenham Hotspur": "Tottenham",
+    "Nottingham Forest": "Nott'm Forest",
+    "Wolverhampton Wanderers": "Wolves",
+    "Leeds United": "Leeds",
+    "Sunderland AFC": "Sunderland",
+    "Leicester City": "Leicester", # Jen pro jistotu
+    "Ipswich Town": "Ipswich"      # Jen pro jistotu
+}
+
 @st.cache_data(ttl=3600)
-def nacti_data():
+def nacti_vsechna_data():
     headers = {"User-Agent": "Mozilla/5.0"}
+    df_h, df_f = None, None
     try:
         df_h = pd.read_csv("https://www.football-data.co.uk/mmz4281/2526/E0.csv")
-    except: df_h = None
+    except Exception as e: st.error(f"Chyba stats: {e}")
+    
     try:
         res = requests.get("https://fixturedownload.com/download/epl-2025-standardized.csv", headers=headers)
         df_f = pd.read_csv(io.StringIO(res.text))
-    except: df_f = None
+        # Okamžité přejmenování sloupců a týmů pro konzistenci
+        df_f = df_f.replace({"Home Team": MAPOVANI_NAZVU, "Away Team": MAPOVANI_NAZVU})
+    except Exception as e: st.error(f"Chyba fixtures: {e}")
+    
     return df_h, df_f
 
-df_hist, df_fix = nacti_data()
+df_hist, df_fix = nacti_vsechna_data()
 
 st.sidebar.title("⚽ SPORT-MATH")
 volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Příští zápasy"])
 
-# --- 1. TABULKA (Řazení podle Bodů a GD) ---
+# --- 1. TABULKA (Body + GD) ---
 if volba == "Tabulka PL" and df_hist is not None:
     týmy = sorted(df_hist['HomeTeam'].unique())
     data = []
@@ -58,18 +76,15 @@ if volba == "Tabulka PL" and df_hist is not None:
         d = df_hist[df_hist['HomeTeam'] == t]
         v = df_hist[df_hist['AwayTeam'] == t]
         b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
-        sv = d['FTHG'].sum() + v['FTAG'].sum()
-        so = d['FTAG'].sum() + v['FTHG'].sum()
-        gd = sv - so
-        data.append({"Tým": t, "Z": len(d)+len(v), "Skóre": f"{int(sv)}:{int(so)}", "GD": gd, "Body": b})
+        sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
+        data.append({"Tým": t, "Z": len(d)+len(v), "Skóre": f"{int(sv)}:{int(so)}", "GD": sv-so, "B": b})
     
-    # Řazení: nejdřív Body, pak GD (obojí sestupně)
-    df_res = pd.DataFrame(data).sort_values(by=["Body", "GD"], ascending=False).reset_index(drop=True)
+    df_res = pd.DataFrame(data).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
     df_res.index += 1
-    df_res.insert(0, 'Logo', df_res['Tým'].map(LOGA_TYMU))
-    st.dataframe(df_res, column_config={"Logo": st.column_config.ImageColumn(" ")}, use_container_width=True)
+    df_res.insert(0, ' ', df_res['Tým'].map(LOGA_TYMU))
+    st.dataframe(df_res, column_config={" ": st.column_config.ImageColumn(" ")}, use_container_width=True, hide_index=True)
 
-# --- 2. STATISTIKY (Poměrový graf s textem) ---
+# --- 2. STATISTIKY (Bílá čísla u krajů) ---
 elif volba == "Týmové statistiky" and df_hist is not None:
     metrika = st.radio("Metrika:", ["Žluté karty", "Fauly", "Rohy"], horizontal=True)
     m = {"Žluté karty": ("HY", "AY"), "Fauly": ("HF", "AF"), "Rohy": ("HC", "AC")}[metrika]
@@ -83,32 +98,50 @@ elif volba == "Týmové statistiky" and df_hist is not None:
         plot_data.append({"Tým": t, "Typ": "Obdržené", "Hodnota": round(ob, 1)})
 
     df_p = pd.DataFrame(plot_data)
-    
+    sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
+
     base = alt.Chart(df_p).encode(
-        y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending"), title=None),
+        y=alt.Y('Tým:N', sort=sort_order, title=None),
         x=alt.X('Hodnota:Q', stack='normalize', axis=None),
-        color=alt.Color('Typ:N', scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), legend=alt.Legend(orient="top"))
+        color=alt.Color('Typ:N', scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), legend=alt.Legend(orient="top", title=None))
+    )
+
+    bars = base.mark_bar()
+    
+    # Čísla vlevo (Udělané)
+    txt_ud = alt.Chart(df_p[df_p['Typ'] == 'Udělané']).mark_text(align='left', dx=10, color='white', fontWeight='bold').encode(
+        y=alt.Y('Tým:N', sort=sort_order), x=alt.value(0), text='Hodnota:Q'
     )
     
-    bars = base.mark_bar()
-    text = base.mark_text(align='center', baseline='middle', color='white', fontWeight='bold').encode(text='Hodnota:Q')
-    
-    st.altair_chart((bars + text).properties(height=600), use_container_width=True)
+    # Čísla vpravo (Obdržené)
+    txt_ob = alt.Chart(df_p[df_p['Typ'] == 'Obdržené']).mark_text(align='right', dx=-10, color='white', fontWeight='bold').encode(
+        y=alt.Y('Tým:N', sort=sort_order), x=alt.X('sum(Hodnota):Q', stack='normalize'), text='Hodnota:Q'
+    )
 
-# --- 3. PŘÍŠTÍ ZÁPASY (Robustní načítání) ---
-elif volba == "Příští zápasy" and df_fix is not None:
-    c_h = next((c for c in df_fix.columns if 'Home' in c), None)
-    c_a = next((c for c in df_fix.columns if 'Away' in c), None)
-    c_r = next((c for c in df_fix.columns if 'Result' in c), None)
-    
-    if c_h and c_a:
-        # Sjednocení názvů pro loga
-        for c in [c_h, c_a]: df_fix[c] = df_fix[c].str.replace("United", "Utd").str.replace("Tottenham Hotspur", "Tottenham")
+    st.altair_chart((bars + txt_ud + txt_ob).properties(height=700), use_container_width=True)
+
+# --- 3. PŘÍŠTÍ ZÁPASY ---
+elif volba == "Příští zápasy":
+    st.header("Nadcházející utkání")
+    if df_fix is not None:
+        # Hledáme zápasy bez skóre
+        mask = df_fix['Result'].isna() | (df_fix['Result'].astype(str).str.strip() == "-")
+        budouci = df_fix[mask].head(25).copy()
         
-        budouci = df_fix[df_fix[c_r].isna() | (df_fix[c_r].astype(str).str.contains("-"))].head(20).copy()
-        budouci['L1'] = budouci[c_h].map(LOGA_TYMU)
-        budouci['L2'] = budouci[c_a].map(LOGA_TYMU)
-        
-        st.dataframe(budouci[['Date', 'L1', c_h, c_a, 'L2']], 
-                     column_config={"L1": st.column_config.ImageColumn(" "), "L2": st.column_config.ImageColumn(" ")},
-                     use_container_width=True, hide_index=True)
+        if not budouci.empty:
+            budouci['L1'] = budouci['Home Team'].map(LOGA_TYMU)
+            budouci['L2'] = budouci['Away Team'].map(LOGA_TYMU)
+            
+            # Přejmenování pro zobrazení
+            vystup = budouci[['Date', 'L1', 'Home Team', 'Away Team', 'L2']].rename(
+                columns={'Date': 'Datum', 'Home Team': 'Domácí', 'Away Team': 'Hosté'}
+            )
+            
+            st.dataframe(vystup, column_config={
+                "L1": st.column_config.ImageColumn(" "),
+                "L2": st.column_config.ImageColumn(" ")
+            }, use_container_width=True, hide_index=True)
+        else:
+            st.warning("V datech nejsou žádné budoucí zápasy. Zkontroluj zdroj CSV.")
+    else:
+        st.error("Data se nepodařilo načíst.")
