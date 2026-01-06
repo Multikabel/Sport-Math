@@ -119,28 +119,46 @@ elif volba == "Rozhodčí":
     st.dataframe(df_ref, use_container_width=True)
 
 # --- 6. SEKCE: SIMULÁTOR ZÁPASŮ ---
-# --- 6. SEKCE: SIMULÁTOR ZÁPASŮ ---
+# --- 6. SEKCE: SIMULÁTOR ZÁPASŮ (MOBILE FRIENDLY) ---
 elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
     týmy = sorted(df_hist['HomeTeam'].unique())
     
-    # 1. Výběry
-    t1 = st.selectbox("Domácí tým:", týmy, index=0)
-    t2_val = st.session_state.get('t2_select', týmy[1] if len(týmy) > 1 else týmy[0])
+    # Nastavení výchozích hodnot do session_state, pokud tam ještě nejsou
+    if 't1_pick' not in st.session_state: st.session_state.t1_pick = týmy[0]
+    if 't2_pick' not in st.session_state: st.session_state.t2_pick = týmy[1] if len(týmy) > 1 else týmy[0]
     
-    # HTML Loga
-    logo1, logo2 = LOGA_TYMU.get(t1, ""), LOGA_TYMU.get(t2_val, "")
+    # 1. VÝBĚR TÝMŮ PŘES TLAČÍTKA (bez klávesnice)
+    c_btn1, c_btn2 = st.columns(2)
+    with c_btn1:
+        with st.popover(f"🏠 Domácí: {st.session_state.t1_pick}", use_container_width=True):
+            st.radio("Vyber domácí tým:", týmy, key="t1_pick")
+            
+    with c_btn2:
+        with st.popover(f"🚀 Hosté: {st.session_state.t2_pick}", use_container_width=True):
+            st.radio("Vyber hostující tým:", týmy, key="t2_pick")
+    
+    t1 = st.session_state.t1_pick
+    t2 = st.session_state.t2_pick
+
+    # Zobrazení log a VS
+    logo1, logo2 = LOGA_TYMU.get(t1, ""), LOGA_TYMU.get(t2, "")
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
         <div style="text-align: center; width: 30%;"><img src="{logo1}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span></div>
         <div style="text-align: center; width: 40%;"><h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1></div>
-        <div style="text-align: center; width: 30%;"><img src="{logo2}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2_val.upper()}</span></div>
+        <div style="text-align: center; width: 30%;"><img src="{logo2}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2.upper()}</span></div>
     </div>
     """, unsafe_allow_html=True)
-    
-    t2 = st.selectbox("Hostující tým:", týmy, index=1 if len(týmy) > 1 else 0, key='t2_select')
+
+    # 2. VÝBĚR ROZHODČÍHO (bez klávesnice)
     ref_list = sorted(df_hist['Referee'].unique()) if 'Referee' in df_hist.columns else []
-    vybrany_ref = st.selectbox("Rozhodčí zápasu:", ref_list)
+    if 'ref_pick' not in st.session_state and ref_list: st.session_state.ref_pick = ref_list[0]
+    
+    with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_pick}", use_container_width=True):
+        st.radio("Vyber rozhodčího:", ref_list, key="ref_pick")
+    
+    vybrany_ref = st.session_state.ref_pick
 
     st.write("---")
 
@@ -159,12 +177,11 @@ elif volba == "Simulátor zápasů":
 
     s1, s2 = get_stats(t1), get_stats(t2)
     
-    # --- VÝPOČTY (MUSÍ BÝT PŘED ZOBRAZENÍM) ---
-    # Góly (Poisson průměry)
+    # --- VÝPOČTY ---
     mu_d = (s1["G_v"] + s2["G_i"]) / 2
     mu_h = (s2["G_v"] + s1["G_i"]) / 2
     
-    # Poissonova distribuce (Pravděpodobnosti 1-X-2)
+    # Poisson 1-X-2
     p_d, p_h, p_r = 0, 0, 0
     for i in range(11):
         for j in range(11):
@@ -178,7 +195,7 @@ elif volba == "Simulátor zápasů":
     ocek_rohy_t2 = (s2["R"] + s1["R"]) / 2
     celkem_rohy = ocek_rohy_t1 + ocek_rohy_t2
 
-    # Rozhodčí a disciplína
+    # Disciplína
     ref_df = df_hist[df_hist['Referee'] == vybrany_ref]
     ref_zapasu = len(ref_df)
     ref_zk_avg = (ref_df['HY'].sum() + ref_df['AY'].sum()) / ref_zapasu if ref_zapasu > 0 else 0
@@ -190,10 +207,9 @@ elif volba == "Simulátor zápasů":
     # --- ZOBRAZENÍ VÝSLEDKŮ ---
     st.subheader("🎯 Predikce zápasu")
     
-    # Blok 1: Góly a Výsledek
     c1, c2, c3 = st.columns(3)
     c1.metric(f"Góly {t1}", round(mu_d, 2))
-    c2.metric("Předpokládané skóre", f"{round(mu_d)} : {round(mu_h)}")
+    c2.metric("Očekávané skóre", f"{round(mu_d)} : {round(mu_h)}")
     c3.metric(f"Góly {t2}", round(mu_h, 2))
     
     o1, o2, o3 = st.columns(3)
@@ -201,35 +217,29 @@ elif volba == "Simulátor zápasů":
     o2.warning(f"**Remíza**\n{round(p_r * 100, 1)} %")
     o3.error(f"**Výhra {t2}**\n{round(p_h * 100, 1)} %")
     
-    # Blok 2: Rohy
     st.write("---")
     st.markdown("### 🚩 Rohové kopy")
     r1, r2, r3 = st.columns(3)
     r1.metric(f"Rohy {t1}", round(ocek_rohy_t1, 1))
-    r2.metric("CELKEM ROHŮ", round(celkem_rohy, 1))
+    r2.metric("CELKEM", round(celkem_rohy, 1))
     r3.metric(f"Rohy {t2}", round(ocek_rohy_t2, 1))
 
-    # Blok 3: Disciplína
     st.write("---")
     st.markdown("### ⚖️ Disciplína")
     f1, f2, f3 = st.columns(3)
-    f1.metric("Očekávané ŽK", round(ocek_karty, 1))
-    f2.metric("Očekávané FAULY", round(ocek_fauly, 1))
+    f1.metric("Předpokládané ŽK", round(ocek_karty, 1))
+    f2.metric("Předpokládané FAULY", round(ocek_fauly, 1))
     f3.metric("Průměr faulů Ref.", round(ref_f_avg, 1))
 
-    # Barometry
-    if celkem_rohy > 10.5:
-        st.info(f"📈 **Aktivní křídla!** Očekává se nadprůměrný počet rohů ({round(celkem_rohy, 1)}).")
-    if ocek_fauly > 25:
-        st.warning(f"⚠️ **Kouskovaná hra!** Očekává se hodně faulů ({round(ocek_fauly, 1)}).")
+    if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
+    if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
-    # --- SROVNÁVACÍ TABULKA ---
-    st.subheader("📊 Detailní srovnání")
+    st.subheader("📊 Srovnání a Forma")
     st.write(f"**Forma {t1}:** {ziskej_formu(t1, df_hist)} | **Forma {t2}:** {ziskej_formu(t2, df_hist)}")
     res_df = pd.DataFrame({
-        "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohové kopy", "Fauly", "Žluté karty"],
+        "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohy", "Fauly", "Žluté karty"],
         t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)],
         t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]
     })
     st.table(res_df)
-    
+            
