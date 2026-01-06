@@ -109,24 +109,20 @@ if volba == "Přehled ligy":
         else:
             st.error("Chyba v názvech sloupců tabulky.")
 
-# --- ANALÝZA TÝMU (FINÁLNÍ POMĚR FAULŮ) ---
+# --- ANALÝZA TÝMU (100% POMĚR) ---
 elif volba == "Analýza týmu":
-    st.header("📊 Poměr faulů: Udělané vs. Obdržené (na zápas)")
+    st.header("📊 Poměr faulů: Udělané vs. Obdržené (%)")
     
     if df_hist is not None:
         c_dt, c_ht, c_fd, c_fh = "Domaci_Tym", "Hoste_Tym", "Fauly_Domaci", "Fauly_Hoste"
 
         if all(c in df_hist.columns for c in [c_dt, c_ht, c_fd, c_fh]):
-            # 1. Příprava dat (výpočet průměrů)
             týmy = df_hist[c_dt].unique()
             data_list = []
 
             for t in týmy:
-                # Počet zápasů
                 z = len(df_hist[(df_hist[c_dt] == t) | (df_hist[c_ht] == t)])
-                # Udělané fauly (vlastní fauly doma + vlastní fauly venku)
                 f_ud = df_hist[df_hist[c_dt] == t][c_fd].sum() + df_hist[df_hist[c_ht] == t][c_fh].sum()
-                # Obdržené fauly (fauly soupeře, když tým hraje doma + fauly soupeře venku)
                 f_ob = df_hist[df_hist[c_dt] == t][c_fh].sum() + df_hist[df_hist[c_ht] == t][c_fd].sum()
                 
                 data_list.append({'Tým': t, 'Typ': 'Udělané', 'Hodnota': f_ud/z})
@@ -136,46 +132,36 @@ elif volba == "Analýza týmu":
 
             import altair as alt
 
-            # ZÁKLAD GRAFU
-            # Seřazeno podle součtu obou hodnot (celková šířka sloupce)
+            # ZÁKLAD GRAFU - stack='normalize' roztáhne sloupce na stejnou šířku
             base = alt.Chart(df_plot).encode(
-                y=alt.Y('Tým:N', 
-                        sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending"), 
-                        title=None),
-                x=alt.X('Hodnota:Q', 
-                        title='Průměr faulů na zápas',
-                        stack='zero'),
+                y=alt.Y('Tým:N', title=None),
+                x=alt.X('Hodnota:Q', stack='normalize', axis=None), # Skryjeme osu X, čísla jsou uvnitř
                 color=alt.Color('Typ:N', 
                                 scale=alt.Scale(domain=['Udělané', 'Obdržené'], 
                                               range=['#2ca02c', '#d62728']),
-                                legend=alt.Legend(
-                                    orient='top',      # Legenda nad grafem
-                                    direction='horizontal',
-                                    title=None
-                                ))
+                                legend=alt.Legend(orient='top', title=None))
             )
 
-            # 2. SLOUPEČKY (Širší graf díky use_container_width)
-            bars = base.mark_bar().properties(height=700)
+            # 1. SLOUPEČKY
+            bars = base.mark_bar(height=30)
 
-            # 3. ČÍSLA ZAROVNANÁ KE KRAJŮM
-            # Udělané (zelená) -> zarovnání doleva (start sloupce)
-            # Obdržené (červená) -> zarovnání doprava (konec sloupce)
+            # 2. TEXTOVÉ ŠTÍTKY (natvrdo bílé)
             text = base.mark_text(
                 baseline='middle',
-                fontSize=12,
+                fontSize=13,
                 fontWeight='bold',
-                color='white',
-                # Dynamické odsazení: Udělané kousek od levého okraje, Obdržené kousek od pravého
-                dx=alt.expr("datum.Typ == 'Udělané' ? 25 : -25"), 
-                align=alt.expr("datum.Typ == 'Udělané' ? 'left' : 'right'")
+                color='white' # Vynucená bílá pro všechna čísla
             ).encode(
+                # Zarovnání: Udělané vlevo, Obdržené vpravo
+                align=alt.expr("datum.Typ == 'Udělané' ? 'left' : 'right'"),
+                # Odsazení od krajů sloupce
+                dx=alt.expr("datum.Typ == 'Udělané' ? 10 : -10"),
                 text=alt.Text('Hodnota:Q', format='.1f'),
-                # Zajistíme, aby text zůstal ve své barevné části při stackování
-                detail='Typ:N' 
+                detail='Typ:N'
             )
 
-            st.altair_chart(bars + text, use_container_width=True)
+            # Zobrazení
+            st.altair_chart((bars + text).properties(height=700), use_container_width=True)
             
         else:
             st.error("Chyba v detekci sloupců.")
