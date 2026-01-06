@@ -140,24 +140,32 @@ elif volba == "Analýza týmu":
 
             import altair as alt
 
-            # ZÁKLAD GRAFU
+                        # ZÁKLAD GRAFU - přidáme scale s rezervou (domainMax), aby čísla nebyla na kraji
+            max_hodnota = df_an['Fauly_na_Zapas'].max() * 1.15 # 15% rezerva
+
             base = alt.Chart(df_an).encode(
                 y=alt.Y('Tým:N', sort='-x', title='Tým'),
-                x=alt.X('Fauly_na_Zapas:Q', title='Průměr faulů na 1 zápas')
+                x=alt.X('Fauly_na_Zapas:Q', 
+                        title='Průměr faulů na 1 zápas',
+                        scale=alt.Scale(domain=[0, max_hodnota]) # Tímto zajistíme místo pro text
+                )
             )
 
             # 2. SLOUPEČKY
             bars = base.mark_bar(color='skyblue').properties(height=600)
 
-            # 3. TEXTOVÉ ŠTÍTKY (čísla vedle sloupců)
+            # 3. TEXTOVÉ ŠTÍTKY (vylepšené)
             text = base.mark_text(
                 align='left',
                 baseline='middle',
-                dx=5,  # Posun textu kousek doprava od konce sloupce
+                dx=7,          # Větší odstup od sloupce
+                fontSize=12,   # Větší písmo
+                fontWeight='bold',
                 color='black'
             ).encode(
                 text=alt.Text('Fauly_na_Zapas:Q', format='.2f')
             )
+
 
             # 4. SVISLÁ LINKA PRŮMĚRU
             line = alt.Chart(pd.DataFrame({'x': [prumer_ligy]})).mark_rule(
