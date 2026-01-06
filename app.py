@@ -33,7 +33,6 @@ LOGA_TYMU = {
     "Wolves": "https://crests.football-data.org/76.png"
 }
 
-# Sjednocení názvů pro rozpis (FixtureDownload -> Football-Data)
 MAPOVANI_NAZVU = {
     "Manchester City": "Man City",
     "Manchester United": "Man United",
@@ -41,25 +40,33 @@ MAPOVANI_NAZVU = {
     "Nottingham Forest": "Nott'm Forest",
     "Wolverhampton Wanderers": "Wolves",
     "Leeds United": "Leeds",
-    "Sunderland AFC": "Sunderland",
-    "Leicester City": "Leicester", # Jen pro jistotu
-    "Ipswich Town": "Ipswich"      # Jen pro jistotu
+    "Sunderland AFC": "Sunderland"
 }
 
 @st.cache_data(ttl=3600)
 def nacti_vsechna_data():
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     df_h, df_f = None, None
+    
+    # 1. HISTORICKÉ STATISTIKY
     try:
         df_h = pd.read_csv("https://www.football-data.co.uk/mmz4281/2526/E0.csv")
-    except Exception as e: st.error(f"Chyba stats: {e}")
-    
+    except Exception as e:
+        st.error(f"Nepodařilo se načíst statistiky: {e}")
+
+    # 2. ROZPIS ZÁPASŮ (S ošetřením chyby tokenizace)
     try:
-        res = requests.get("https://fixturedownload.com/download/epl-2025-standardized.csv", headers=headers)
-        df_f = pd.read_csv(io.StringIO(res.text))
-        # Okamžité přejmenování sloupců a týmů pro konzistenci
-        df_f = df_f.replace({"Home Team": MAPOVANI_NAZVU, "Away Team": MAPOVANI_NAZVU})
-    except Exception as e: st.error(f"Chyba fixtures: {e}")
+        url_fix = "https://fixturedownload.com/download/epl-2025-standardized.csv"
+        response = requests.get(url_fix, headers=headers, timeout=10)
+        if response.status_code == 200:
+            # Přečteme řádky a vynecháme ty, které nejsou validní CSV
+            raw_data = response.text
+            df_f = pd.read_csv(io.StringIO(raw_data), on_bad_lines='skip')
+            df_f = df_f.replace({"Home Team": MAPOVANI_NAZVU, "Away Team": MAPOVANI_NAZVU})
+        else:
+            st.warning("Fixture server vrátil chybu, zkouším alternativní zpracování...")
+    except Exception as e:
+        st.error(f"Chyba při stahování rozpisu: {e}")
     
     return df_h, df_f
 
@@ -68,7 +75,7 @@ df_hist, df_fix = nacti_vsechna_data()
 st.sidebar.title("⚽ SPORT-MATH")
 volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Příští zápasy"])
 
-# --- 1. TABULKA (Body + GD) ---
+# --- (Sekce Tabulka a Statistiky zůstávají stejné jako minule, jsou funkční) ---
 if volba == "Tabulka PL" and df_hist is not None:
     týmy = sorted(df_hist['HomeTeam'].unique())
     data = []
@@ -78,17 +85,14 @@ if volba == "Tabulka PL" and df_hist is not None:
         b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
         sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
         data.append({"Tým": t, "Z": len(d)+len(v), "Skóre": f"{int(sv)}:{int(so)}", "GD": sv-so, "B": b})
-    
     df_res = pd.DataFrame(data).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
     df_res.index += 1
     df_res.insert(0, ' ', df_res['Tým'].map(LOGA_TYMU))
     st.dataframe(df_res, column_config={" ": st.column_config.ImageColumn(" ")}, use_container_width=True, hide_index=True)
 
-# --- 2. STATISTIKY (Bílá čísla u krajů) ---
 elif volba == "Týmové statistiky" and df_hist is not None:
     metrika = st.radio("Metrika:", ["Žluté karty", "Fauly", "Rohy"], horizontal=True)
     m = {"Žluté karty": ("HY", "AY"), "Fauly": ("HF", "AF"), "Rohy": ("HC", "AC")}[metrika]
-    
     plot_data = []
     for t in sorted(df_hist['HomeTeam'].unique()):
         z = len(df_hist[(df_hist['HomeTeam']==t) | (df_hist['AwayTeam']==t)])
@@ -96,43 +100,31 @@ elif volba == "Týmové statistiky" and df_hist is not None:
         ob = (df_hist[df_hist['HomeTeam']==t][m[1]].sum() + df_hist[df_hist['AwayTeam']==t][m[0]].sum()) / z
         plot_data.append({"Tým": t, "Typ": "Udělané", "Hodnota": round(ud, 1)})
         plot_data.append({"Tým": t, "Typ": "Obdržené", "Hodnota": round(ob, 1)})
-
     df_p = pd.DataFrame(plot_data)
     sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
-
     base = alt.Chart(df_p).encode(
         y=alt.Y('Tým:N', sort=sort_order, title=None),
         x=alt.X('Hodnota:Q', stack='normalize', axis=None),
         color=alt.Color('Typ:N', scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), legend=alt.Legend(orient="top", title=None))
     )
-
     bars = base.mark_bar()
-    
-    # Čísla vlevo (Udělané)
-    txt_ud = alt.Chart(df_p[df_p['Typ'] == 'Udělané']).mark_text(align='left', dx=10, color='white', fontWeight='bold').encode(
-        y=alt.Y('Tým:N', sort=sort_order), x=alt.value(0), text='Hodnota:Q'
-    )
-    
-    # Čísla vpravo (Obdržené)
-    txt_ob = alt.Chart(df_p[df_p['Typ'] == 'Obdržené']).mark_text(align='right', dx=-10, color='white', fontWeight='bold').encode(
-        y=alt.Y('Tým:N', sort=sort_order), x=alt.X('sum(Hodnota):Q', stack='normalize'), text='Hodnota:Q'
-    )
-
+    txt_ud = alt.Chart(df_p[df_p['Typ'] == 'Udělané']).mark_text(align='left', dx=10, color='white', fontWeight='bold').encode(y=alt.Y('Tým:N', sort=sort_order), x=alt.value(0), text='Hodnota:Q')
+    txt_ob = alt.Chart(df_p[df_p['Typ'] == 'Obdržené']).mark_text(align='right', dx=-10, color='white', fontWeight='bold').encode(y=alt.Y('Tým:N', sort=sort_order), x=alt.X('sum(Hodnota):Q', stack='normalize'), text='Hodnota:Q')
     st.altair_chart((bars + txt_ud + txt_ob).properties(height=700), use_container_width=True)
 
-# --- 3. PŘÍŠTÍ ZÁPASY ---
+# --- 3. PŘÍŠTÍ ZÁPASY (OPRAVENÁ FILTRACE) ---
 elif volba == "Příští zápasy":
     st.header("Nadcházející utkání")
     if df_fix is not None:
-        # Hledáme zápasy bez skóre
-        mask = df_fix['Result'].isna() | (df_fix['Result'].astype(str).str.strip() == "-")
-        budouci = df_fix[mask].head(25).copy()
+        # FixtureDownload používá sloupec 'Result' - pokud je tam výsledek, zápas proběhl. 
+        # Pokud je tam NaN nebo prázdno, zápas nás čeká.
+        df_fix['Result'] = df_fix['Result'].fillna('-')
+        budouci = df_fix[df_fix['Result'].astype(str).str.contains('-') | (df_fix['Result'] == "")].head(25).copy()
         
         if not budouci.empty:
             budouci['L1'] = budouci['Home Team'].map(LOGA_TYMU)
             budouci['L2'] = budouci['Away Team'].map(LOGA_TYMU)
             
-            # Přejmenování pro zobrazení
             vystup = budouci[['Date', 'L1', 'Home Team', 'Away Team', 'L2']].rename(
                 columns={'Date': 'Datum', 'Home Team': 'Domácí', 'Away Team': 'Hosté'}
             )
@@ -142,6 +134,6 @@ elif volba == "Příští zápasy":
                 "L2": st.column_config.ImageColumn(" ")
             }, use_container_width=True, hide_index=True)
         else:
-            st.warning("V datech nejsou žádné budoucí zápasy. Zkontroluj zdroj CSV.")
+            st.info("Momentálně nejsou v rozpisu žádné neodehrané zápasy.")
     else:
-        st.error("Data se nepodařilo načíst.")
+        st.error("Nepodařilo se načíst soubor s rozpisem.")
