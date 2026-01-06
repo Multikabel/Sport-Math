@@ -108,7 +108,8 @@ if volba == "Přehled ligy":
             )
         else:
             st.error("Chyba v názvech sloupců tabulky.")
-            
+
+
 # 3. ANALÝZA TÝMU
 elif volba == "Analýza týmu":
     st.header("Detailní statistiky")
@@ -122,7 +123,8 @@ elif volba == "Analýza týmu":
             st.subheader("Vývoj střel v sezóně")
             st.line_chart(zapas_tymu[['Strely_Domaci', 'Strely_Hoste']].reset_index(drop=True))
     else:
-        st.error("Chybí data pro analýzu.")
+        st.error("Chybí data pro analýzu.")          
+
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
 elif volba == "Nadcházející zápasy":
