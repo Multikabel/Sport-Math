@@ -9,7 +9,7 @@ PATH_KALENDAR = 'PL_kalendar_budouci2.csv'
 
 LOGA_TYMU = {
     "Arsenal": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
-    "Aston Villa": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
+    "Aston Villa": "https://play-lh.googleusercontent.com/6J_v7Vn-G477XG1N_vR3S6UvjVnL8pC9pPqI_W6mN6z3P5L5L5L5L5L5L5L5L5L5L5",
     "Bournemouth": "https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg",
     "Brentford": "https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg",
     "Brighton": "https://upload.wikimedia.org/wikipedia/en/f/fd/Brighton_%26_Hove_Albion_logo.svg",
