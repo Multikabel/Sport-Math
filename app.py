@@ -33,7 +33,8 @@ LOGA_TYMU = {
     "West Ham": "https://crests.football-data.org/563.png",
     "Wolves": "https://crests.football-data.org/76.png",
     "Sunderland": "https://crests.football-data.org/71.png",
-    "Leeds": "https://crests.football-data.org/341.png"
+    "Leeds": "https://crests.football-data.org/341.png",
+    "Burnley": "https://crests.football-data.org/70.png"
 }
 
 # --- NAČÍTÁNÍ DAT Z WEBU ---
