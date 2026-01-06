@@ -110,21 +110,41 @@ if volba == "Přehled ligy":
             st.error("Chyba v názvech sloupců tabulky.")
 
 
-# --- ANALÝZA TÝMU (FIXNUTÉ POZICE ČÍSEL) ---
+# --- ANALÝZA TÝMU (UNIVERZÁLNÍ PŘEPÍNAČ) ---
 elif volba == "Analýza týmu":
-    st.header("📊 Poměr faulů: Udělané vs. Obdržené (%)")
+    # 1. Přepínač metrik
+    metrika = st.radio(
+        "Vyberte statistiku pro analýzu (průměr na zápas):",
+        ["Fauly", "Žluté karty", "Rohy"],
+        horizontal=True
+    )
+
+    # Mapování názvů na sloupce v CSV
+    mapping = {
+        "Fauly": {"domaci": "Fauly_Domaci", "hoste": "Fauly_Hoste", "label": "faulů"},
+        "Žluté karty": {"domaci": "Zlute_Domaci", "hoste": "Zlute_Hoste", "label": "žlutých karet"},
+        "Rohy": {"domaci": "Rohy_Domaci", "hoste": "Rohy_Hoste", "label": "rohů"}
+    }
+
+    conf = mapping[metrika]
     
     if df_hist is not None:
-        c_dt, c_ht, c_fd, c_fh = "Domaci_Tym", "Hoste_Tym", "Fauly_Domaci", "Fauly_Hoste"
+        c_dt, c_ht = "Domaci_Tym", "Hoste_Tym"
+        c_fd, c_fh = conf["domaci"], conf["hoste"]
 
         if all(c in df_hist.columns for c in [c_dt, c_ht, c_fd, c_fh]):
-            týmy = df_hist[c_dt].unique()
+            týmy = sorted(df_hist[c_dt].unique())
             data_list = []
 
             for t in týmy:
-                z = len(df_hist[(df_hist[c_dt] == t) | (df_hist[c_ht] == t)])
+                # Výpočet zápasů
+                df_team = df_hist[(df_hist[c_dt] == t) | (df_hist[c_ht] == t)]
+                z = len(df_team)
                 if z == 0: continue
+                
+                # Udělané (vlastní tým)
                 f_ud = df_hist[df_hist[c_dt] == t][c_fd].sum() + df_hist[df_hist[c_ht] == t][c_fh].sum()
+                # Obdržené (soupeř týmu)
                 f_ob = df_hist[df_hist[c_dt] == t][c_fh].sum() + df_hist[df_hist[c_ht] == t][c_fd].sum()
                 
                 data_list.append({'Tým': t, 'Typ': 'Udělané', 'Hodnota': f_ud/z})
@@ -133,7 +153,7 @@ elif volba == "Analýza týmu":
             df_plot = pd.DataFrame(data_list)
             import altair as alt
 
-            # Společné řazení pro všechny vrstvy
+            # Společné řazení (seřazeno podle celkové výšky/součtu obou hodnot)
             sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
 
             # 1. SLOUPEČKY (100% šířka)
@@ -145,36 +165,30 @@ elif volba == "Analýza týmu":
                                 legend=alt.Legend(orient='top', title=None))
             )
 
-            # 2. TEXT PRO "UDĚLANÉ" (Vynuceně na začátku - x=0)
-            text_udělany = alt.Chart(df_plot[df_plot['Typ'] == 'Udělané']).mark_text(
+            # 2. TEXT VLEVO (Udělané) - fixní pozice na začátku
+            text_ud = alt.Chart(df_plot[df_plot['Typ'] == 'Udělané']).mark_text(
                 align='left', baseline='middle', dx=10, color='white', fontWeight='bold', fontSize=13
             ).encode(
                 y=alt.Y('Tým:N', sort=sort_order),
-                x=alt.value(0), # Tady je fix: začátek sloupce
+                x=alt.value(0),
                 text=alt.Text('Hodnota:Q', format='.1f')
             )
 
-            # 3. TEXT PRO "OBDRŽENÉ" (Vynuceně na konci - x=šířka grafu)
-            # Použijeme pomocný výpočet pro pravý okraj (v normalize režimu je to 1)
-            text_obdrzeny = alt.Chart(df_plot[df_plot['Typ'] == 'Obdržené']).mark_text(
+            # 3. TEXT VPRAVO (Obdržené) - fixní pozice na konci
+            text_ob = alt.Chart(df_plot[df_plot['Typ'] == 'Obdržené']).mark_text(
                 align='right', baseline='middle', dx=-10, color='white', fontWeight='bold', fontSize=13
             ).encode(
                 y=alt.Y('Tým:N', sort=sort_order),
-                x=alt.value(1150 if 'container_width' else 600), # Fix pro pravý okraj (přizpůsobí se šířce)
-                text=alt.Text('Hodnota:Q', format='.1f')
-            )
-            
-            # Pokud x=alt.value dává problémy s responzivitou, použijeme toto jistější řešení:
-            text_obdrzeny = alt.Chart(df_plot[df_plot['Typ'] == 'Obdržené']).mark_text(
-                align='right', baseline='middle', dx=-10, color='white', fontWeight='bold', fontSize=13
-            ).encode(
-                y=alt.Y('Tým:N', sort=sort_order),
-                x=alt.X('sum(Hodnota):Q', stack='normalize'), # Suma obou hodnot v normalize je vždy konec
+                x=alt.X('sum(Hodnota):Q', stack='normalize'),
                 text=alt.Text('Hodnota:Q', format='.1f')
             )
 
-            st.altair_chart((bars + text_udělany + text_obdrzeny).properties(height=700), use_container_width=True)
+            st.subheader(f"📊 Poměr {conf['label']} na zápas")
+            st.altair_chart((bars + text_ud + text_ob).properties(height=700), use_container_width=True)
             
+        else:
+            st.error(f"V datech chybí sloupce pro: {metrika}")
+    
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
 elif volba == "Nadcházející zápasy":
