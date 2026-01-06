@@ -119,27 +119,76 @@ elif volba == "Rozhodčí":
     st.dataframe(df_ref, use_container_width=True)
 
 # --- 6. SEKCE: SIMULÁTOR ZÁPASŮ ---
+# --- 6. SEKCE: SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
     týmy = sorted(df_hist['HomeTeam'].unique())
-    t1 = st.selectbox("Domácí tým:", týmy, index=0)
-    t2_val = st.session_state.get('t2_select', týmy[1])
     
-    html_kód = f"""<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;"><div style="text-align:center;width:30%;"><img src="{LOGA_TYMU.get(t1,'')}" width="80"><br><span style="color:gray;font-size:0.8rem;font-weight:bold;">{t1.upper()}</span></div><div style="text-align:center;width:40%;"><h1 style="margin:0;font-size:2.5rem;color:#555;">VS</h1></div><div style="text-align:center;width:30%;"><img src="{LOGA_TYMU.get(t2_val,'')}" width="80"><br><span style="color:gray;font-size:0.8rem;font-weight:bold;">{t2_val.upper()}</span></div></div>"""
+    # --- VÝBĚR TÝMŮ ---
+    t1 = st.selectbox("Domácí tým:", týmy, index=0)
+    # Použití session_state, aby se hostující tým pamatoval při změně domácího
+    t2_val = st.session_state.get('t2_select', týmy[1] if len(týmy) > 1 else týmy[0])
+    
+    # --- LOGA V JEDNOM ŘÁDKU (HTML/Flexbox) ---
+    logo1, logo2 = LOGA_TYMU.get(t1, ""), LOGA_TYMU.get(t2_val, "")
+    html_kód = f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <div style="text-align: center; width: 30%;">
+            <img src="{logo1}" width="80"><br>
+            <span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span>
+        </div>
+        <div style="text-align: center; width: 40%;">
+            <h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1>
+        </div>
+        <div style="text-align: center; width: 30%;">
+            <img src="{logo2}" width="80"><br>
+            <span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2_val.upper()}</span>
+        </div>
+    </div>
+    """
     st.markdown(html_kód, unsafe_allow_html=True)
     
-    t2 = st.selectbox("Hostující tým:", týmy, index=1, key='t2_select')
-    ref_list = sorted(df_hist['Referee'].unique())
+    # --- VÝBĚR HOSTŮ A ROZHODČÍHO ---
+    t2 = st.selectbox("Hostující tým:", týmy, index=1 if len(týmy) > 1 else 0, key='t2_select')
+    
+    ref_list = sorted(df_hist['Referee'].unique()) if 'Referee' in df_hist.columns else []
     vybrany_ref = st.selectbox("Rozhodčí zápasu:", ref_list)
 
+    st.write("---")
+
+    # --- FUNKCE PRO VÝPOČET STATISTIK TÝMU ---
     def get_stats(team):
         d, v = df_hist[df_hist['HomeTeam'] == team], df_hist[df_hist['AwayTeam'] == team]
         z = len(d) + len(v)
-        return {"G_v": (d['FTHG'].sum() + v['FTAG'].sum())/z, "G_i": (d['FTAG'].sum() + v['FTHG'].sum())/z, "R": (d['HC'].sum() + v['AC'].sum())/z, "K": (d['HY'].sum() + v['AY'].sum())/z, "F": (d['HF'].sum() + v['AF'].sum())/z}
+        if z == 0: return {"G_v": 0, "G_i": 0, "R": 0, "K": 0, "F": 0}
+        return {
+            "G_v": (d['FTHG'].sum() + v['FTAG'].sum()) / z,
+            "G_i": (d['FTAG'].sum() + v['FTHG'].sum()) / z,
+            "R": (d['HC'].sum() + v['AC'].sum()) / z,
+            "K": (d['HY'].sum() + v['AY'].sum()) / z,
+            "F": (d['HF'].sum() + v['AF'].sum()) / z
+        }
 
     s1, s2 = get_stats(t1), get_stats(t2)
-    mu_d, mu_h = (s1["G_v"] + s2["G_i"])/2, (s2["G_v"] + s1["G_i"])/2
     
+    # --- VÝPOČTY PREDIKCÍ (GÓLY, KARTY, FAULY) ---
+    mu_d = (s1["G_v"] + s2["G_i"]) / 2
+    mu_h = (s2["G_v"] + s1["G_i"]) / 2
+    
+    # Statistiky rozhodčího
+    ref_df = df_hist[df_hist['Referee'] == vybrany_ref]
+    ref_zapasu = len(ref_df)
+    if ref_zapasu > 0:
+        ref_zk_avg = (ref_df['HY'].sum() + ref_df['AY'].sum()) / ref_zapasu
+        ref_f_avg = (ref_df['HF'].sum() + ref_df['AF'].sum()) / ref_zapasu
+    else:
+        ref_zk_avg, ref_f_avg = 0, 0
+
+    # Kombinované predikce
+    ocek_karty = (s1["K"] + s2["K"] + ref_zk_avg) / 1.5
+    ocek_fauly = (s1["F"] + s2["F"] + ref_f_avg) / 1.5
+
+    # Poissonův výpočet pravděpodobností (1-X-2)
     p_d, p_h, p_r = 0, 0, 0
     for i in range(11):
         for j in range(11):
@@ -148,23 +197,42 @@ elif volba == "Simulátor zápasů":
             elif i < j: p_h += p
             else: p_r += p
 
-    st.subheader("🎯 Predikce")
+    # --- ZOBRAZENÍ VÝSLEDKŮ ---
+    st.subheader("🎯 Predikce zápasu")
+    
+    # Řada 1: Góly
     c1, c2, c3 = st.columns(3)
     c1.metric(f"Góly {t1}", round(mu_d, 2))
     c2.metric("Předpokládané skóre", f"{round(mu_d)} : {round(mu_h)}")
     c3.metric(f"Góly {t2}", round(mu_h, 2))
     
+    # Řada 2: 1-X-2 Procenta
     o1, o2, o3 = st.columns(3)
     o1.success(f"**Výhra {t1}**\n{round(p_d * 100, 1)} %")
     o2.warning(f"**Remíza**\n{round(p_r * 100, 1)} %")
     o3.error(f"**Výhra {t2}**\n{round(p_h * 100, 1)} %")
     
-    ref_df = df_hist[df_hist['Referee'] == vybrany_ref]
-    ref_zk_avg = (ref_df['HY'].sum() + ref_df['AY'].sum()) / len(ref_df) if len(ref_df) > 0 else 0
-    ocek_karty = (s1["K"] + s2["K"] + ref_zk_avg) / 1.5
-    st.metric("Očekávané ŽK (Týmy + Rozhodčí)", round(ocek_karty, 1))
+    # Řada 3: Disciplína
+    st.write("---")
+    f1, f2, f3 = st.columns(3)
+    f1.metric("Očekávané ŽK", round(ocek_karty, 1))
+    f2.metric("Očekávané FAULY", round(ocek_fauly, 1))
+    f3.metric("Průměr faulů Ref.", round(ref_f_avg, 1))
 
+    # Barometr faulů
+    if ocek_fauly > 25:
+        st.warning(f"⚠️ **Pozor na fauly!** Očekává se kouskovaná hra ({round(ocek_fauly, 1)} faulů).")
+    elif ocek_fauly < 18:
+        st.success(f"🏃 **Plynulá hra.** Očekává se čistý zápas ({round(ocek_fauly, 1)} faulů).")
+
+    # --- SROVNÁVACÍ TABULKA A FORMA ---
     st.subheader("📊 Srovnání a Forma")
     st.write(f"**Forma {t1}:** {ziskej_formu(t1, df_hist)} | **Forma {t2}:** {ziskej_formu(t2, df_hist)}")
-    res_df = pd.DataFrame({"Metrika": ["Góly vstřelené", "Góly inkasované", "Rohy", "Fauly", "Žluté karty"], t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)], t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]})
+    
+    res_df = pd.DataFrame({
+        "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohové kopy", "Fauly", "Žluté karty"],
+        t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)],
+        t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]
+    })
     st.table(res_df)
+    
