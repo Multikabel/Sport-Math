@@ -45,7 +45,7 @@ def nacti_data():
 df_hist = nacti_data()
 
 st.sidebar.title("⚽ SPORT-MATH")
-volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Simulátor zápasů"])
+volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Simulátor zápasů", "Rozhodčí"])
 
 if df_hist is None:
     st.error("Chyba: Nepodařilo se načíst data.")
@@ -143,9 +143,53 @@ elif volba == "Simulátor zápasů":
     o1, o2, o3 = st.columns(3)
     o1.success(f"**Výhra {t1}**\n{round(p_d * 100, 1)} %")
     o2.warning(f"**Remíza**\n{round(p_r * 100, 1)} %")
+
     o3.error(f"**Výhra {t2}**\n{round(p_h * 100, 1)} %")
     
     st.subheader("📊 Srovnání a Forma")
     st.write(f"**Forma {t1}:** {ziskej_formu(t1, df_hist)} | **Forma {t2}:** {ziskej_formu(t2, df_hist)}")
     res_df = pd.DataFrame({"Metrika": ["Góly vstřelené", "Góly inkasované", "Rohy", "Fauly", "Žluté karty"], t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)], t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]})
     st.table(res_df)
+
+# --- 4. ROZHODČÍ (NOVÁ SEKCE) ---
+elif volba == "Rozhodčí":
+    st.header("Analýza rozhodčích Premier League 25/26")
+    
+    if 'Referee' in df_hist.columns:
+        ref_stats = []
+        rozhodci_list = df_hist['Referee'].unique()
+        
+        for r in rozhodci_list:
+            zapas_ref = df_hist[df_hist['Referee'] == r]
+            pocet_zapasu = len(zapas_ref)
+            if pocet_zapasu > 0:
+                zlute = zapas_ref['HY'].sum() + zapas_ref['AY'].sum()
+                cervene = zapas_ref['HR'].sum() + zapas_ref['AR'].sum()
+                fauly = zapas_ref['HF'].sum() + zapas_ref['AF'].sum()
+                
+                ref_stats.append({
+                    "Rozhodčí": r,
+                    "Zápasy": pocet_zapasu,
+                    "Fauly/zápas": round(fauly / pocet_zapasu, 2),
+                    "ŽK/zápas": round(zlute / pocet_zapasu, 2),
+                    "ČK celkem": int(cervene)
+                })
+        
+        df_ref = pd.DataFrame(ref_stats).sort_values(by="ŽK/zápas", ascending=False).reset_index(drop=True)
+        df_ref.index += 1
+        
+        # Zobrazení tabulky
+        st.dataframe(df_ref, use_container_width=True)
+        
+        # Graf nejpřísnějších rozhodčích (podle ŽK)
+        st.subheader("Průměr žlutých karet na zápas")
+        chart_ref = alt.Chart(df_ref.head(10)).mark_bar(color='#ff4b4b').encode(
+            x=alt.X('ŽK/zápas:Q', title="Průměr žlutých karet"),
+            y=alt.Y('Rozhodčí:N', sort='-x', title=None)
+        ).properties(height=400)
+        
+        st.altair_chart(chart_ref, use_container_width=True)
+        
+        st.info("Tip: Sledujte rozhodčí s průměrem nad 4.5 ŽK/zápas, tam bývá prostor pro sázky na karty.")
+    else:
+        st.warning("Data o rozhodčích nejsou v tomto souboru k dispozici.")
