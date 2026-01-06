@@ -161,7 +161,7 @@ elif volba == "Analýza týmu":
                 dx=7,          # Větší odstup od sloupce
                 fontSize=12,   # Větší písmo
                 fontWeight='bold',
-                color='black'
+                color='white'
             ).encode(
                 text=alt.Text('Fauly_na_Zapas:Q', format='.2f')
             )
