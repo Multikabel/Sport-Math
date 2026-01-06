@@ -41,7 +41,7 @@ LOGA_TYMU = {
 
 st.set_page_config(page_title="PL Analytika 2026", layout="wide")
 
-st.title("⚽ Fotbalová Analytická Aplikace")
+st.title("⚽ SPORT-MATH")
 
 
 # 1. BOČNÍ PANEL
