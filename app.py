@@ -9,29 +9,33 @@ PATH_KALENDAR = 'PL_kalendar_budouci2.csv'
 
 
 LOGA_TYMU = {
-    "Arsenal": "https://play-lh.googleusercontent.com/9m0-z_Uo373Xn09P1T40XbE_W4K_36nOaL66H4WvP_Hl3_Dq1hG_M_qXvV-WbO9e9A=w240-h480-rw",
-    "Aston Villa": "https://img.vavel.com/t-aston-villa-logo-png-4336-1603912197545.png",
-    "Bournemouth": "https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg",
-    "Brentford": "https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg",
-    "Brighton": "https://upload.wikimedia.org/wikipedia/en/f/fd/Brighton_%26_Hove_Albion_logo.svg",
+    "Arsenal": "https://crests.football-data.org/57.png",
+    "Aston Villa": "https://crests.football-data.org/58.png",
+    "Bournemouth": "https://crests.football-data.org/1044.png",
+    "Brentford": "https://crests.football-data.org/402.png",
+    "Brighton": "https://crests.football-data.org/397.png",
     "Burnley": "https://crests.football-data.org/70.png",
-    "Chelsea": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
-    "Crystal Palace": "https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg",
-    "Everton": "https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg",
+    "Chelsea": "https://crests.football-data.org/61.png",
+    "Crystal Palace": "https://crests.football-data.org/354.png",
+    "Everton": "https://crests.football-data.org/62.png",
     "Fulham": "https://crests.football-data.org/63.png",
     "Leeds": "https://crests.football-data.org/341.png",
-    "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
-    "Man City": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
-    "Man United": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
-    "Newcastle": "https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg",
-    "Nott'm Forest": "https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg",
-    "Southampton": "https://upload.wikimedia.org/wikipedia/en/c/c9/Southampton_FC.svg",
+    "Leeds": "https://crests.football-data.org/341.png",
+    "Liverpool": "https://crests.football-data.org/64.png",
+    "Man City": "https://crests.football-data.org/65.png",
+    "Manchester City": "https://crests.football-data.org/65.png",
+    "Man United": "https://crests.football-data.org/66.png",
+    "Manchester United": "https://crests.football-data.org/66.png",
+    "Newcastle": "https://crests.football-data.org/67.png",
+    "Nott'm Forest": "https://crests.football-data.org/351.png",
+    "Southampton": "https://crests.football-data.org/340.png",
     "Spurs": "https://crests.football-data.org/73.png",
     "Sunderland": "https://crests.football-data.org/71.png",
     "Tottenham": "https://crests.football-data.org/73.png",
-    "West Ham": "https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg",
-    "Wolves": "https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg"
+    "West Ham": "https://crests.football-data.org/563.png",
+    "Wolves": "https://crests.football-data.org/76.png"
 }
+
 
 
 
