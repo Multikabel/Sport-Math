@@ -70,18 +70,44 @@ df_kal = nacti_data(PATH_KALENDAR)
 if volba == "Přehled ligy":
     st.header("Aktuální pořadí Premier League")
     if df_tab is not None:
+        # 1. Odstraníme "Unnamed" sloupce
         if "Unnamed: 0" in df_tab.columns:
             df_tab = df_tab.drop(columns=["Unnamed: 0"])
 
+        # 2. Převedeme Body (B) na čísla pro správné řazení
         df_tab['B'] = pd.to_numeric(df_tab['B'], errors='coerce')
         
         if 'B' in df_tab.columns and 'Skóre' in df_tab.columns:
+            # Seřazení tabulky
             df_tab = df_tab.sort_values(by=['B', 'Skóre'], ascending=False).reset_index(drop=True)
+            
+            # Vytvoření sloupce Pořadí
             df_tab.index += 1
             df_tab.insert(0, 'Pořadí', df_tab.index)
-            st.dataframe(df_tab, use_container_width=True, hide_index=True)
+
+            # --- PŘIDÁNÍ LOG TÝMŮ ---
+            # Vytvoříme sloupec s URL loga na základě názvu týmu
+            # .str.strip() vymaže mezery, aby mapování fungovalo
+            df_tab.insert(1, 'Logo', df_tab['Tým'].str.strip().map(LOGA_TYMU))
+            
+            # Diagnostika pro tabulku (kdyby náhodou logo chybělo)
+            chybejici_v_tabulce = df_tab[df_tab['Logo'].isna()]['Tým'].unique()
+            if len(chybejici_v_tabulce) > 0:
+                st.warning(f"Chybí loga pro: {chybejici_v_tabulce}")
+
+            # 3. Zobrazení tabulky s konfigurací pro obrázky
+            st.dataframe(
+                df_tab, 
+                column_config={
+                    "Logo": st.column_config.ImageColumn(" ", width="small"),
+                    "Pořadí": st.column_config.Column(width="small"),
+                    "B": "Body" # Přejmenování sloupce v náhledu
+                },
+                use_container_width=True, 
+                hide_index=True
+            )
         else:
-            st.error("Chyba v názvech sloupců. Zkontroluj velké/malé písmo.")
+            st.error("Chyba v názvech sloupců tabulky.")
             
 # 3. ANALÝZA TÝMU
 elif volba == "Analýza týmu":
