@@ -82,7 +82,7 @@ if volba == "Přehled ligy":
             st.dataframe(df_tab, use_container_width=True, hide_index=True)
         else:
             st.error("Chyba v názvech sloupců. Zkontroluj velké/malé písmo.")
-
+            
 # 3. ANALÝZA TÝMU
 elif volba == "Analýza týmu":
     st.header("Detailní statistiky")
