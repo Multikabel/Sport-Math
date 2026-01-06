@@ -23,6 +23,7 @@ LOGA_TYMU = {
     "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
     "Man City": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
     "Man United": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
+    "Man Utd": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
     "Newcastle": "https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg",
     "Nott'm Forest": "https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg",
     "Southampton": "https://upload.wikimedia.org/wikipedia/en/c/c9/Southampton_FC.svg",
@@ -120,7 +121,6 @@ elif volba == "Nadcházející zápasy":
         df_kal[' '] = df_kal['Domácí'].str.strip().map(LOGA_TYMU)
         df_kal['  '] = df_kal['Hosté'].str.strip().map(LOGA_TYMU)
 
-        st.write("Týmy, které nebyly nalezeny v LOGA_TYMU:", df_kal[df_kal[' '].isna()]['Domácí'].unique())
         
 
         # Definice pořadí sloupců (loga jsou u názvů týmů)
