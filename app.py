@@ -129,72 +129,67 @@ elif volba == "Analýza týmu":
 
         st.altair_chart((bars + text_ud + text_ob).properties(height=700), use_container_width=True)
 
-# --- 3. NADCHÁZEJÍCÍ ZÁPASY (OPRAVENÁ VERZE) ---
+# --- 3. NADCHÁZEJÍCÍ ZÁPASY (ROBUSTNÍ VERZE) ---
 elif volba == "Nadcházející zápasy":
     st.header("📅 Plán příštích utkání")
+    
     if df_fixtures is not None:
-        # 1. Debug: Podíváme se, jak se sloupce skutečně jmenují (kdyby náhodou)
-        # st.write(df_fixtures.columns) # Pro testování můžete odkomentovat
-
-        # 2. Filtrace zápasů, které ještě nemají výsledek
-        # Zkusíme najít sloupec s výsledkem (může být 'Result' nebo 'Res')
-        col_res = 'Result' if 'Result' in df_fixtures.columns else ('Res' if 'Res' in df_fixtures.columns else None)
+        # 1. Dynamická detekce sloupců (FixtureDownload mění názvy)
+        cols = df_fixtures.columns.tolist()
         
-        if col_res:
-            # Vyfiltrujeme řádky, kde výsledek chybí (je NaN, prázdný string nebo pomlčka)
-            df_budouci = df_fixtures[
-                df_fixtures[col_res].isna() | 
-                (df_fixtures[col_res].astype(str).str.strip() == "") | 
-                (df_fixtures[col_res].astype(str).str.strip() == "-")
-            ].copy()
-        else:
-            df_budouci = df_fixtures.copy()
+        # Najdeme správné názvy pro Domácí, Hosté, Datum a Výsledek
+        c_home = next((c for c in cols if c in ['Home Team', 'HomeTeam', 'Home']), None)
+        c_away = next((c for c in cols if c in ['Away Team', 'AwayTeam', 'Away']), None)
+        c_date = next((c for c in cols if c in ['Date', 'Scheduled', 'Datum']), None)
+        c_res = next((c for c in cols if c in ['Result', 'Res', 'Výsledek']), None)
 
-        if not df_budouci.empty:
-            # 3. Sjednocení názvů sloupců (FixtureDownload používá 'Home Team' a 'Away Team')
-            col_home = 'Home Team' if 'Home Team' in df_fixtures.columns else 'HomeTeam'
-            col_away = 'Away Team' if 'Away Team' in df_fixtures.columns else 'AwayTeam'
-            col_date = 'Date' if 'Date' in df_fixtures.columns else 'Scheduled'
-            col_time = 'Time' if 'Time' in df_fixtures.columns else 'Location' # Location jako záloha
+        if c_home and c_away:
+            # 2. Filtrace pouze budoucích zápasů
+            if c_res:
+                # Označíme jako budoucí vše, kde není skóre (NaN, prázdno nebo pomlčka)
+                mask_budouci = (
+                    df_fixtures[c_res].isna() | 
+                    (df_fixtures[c_res].astype(str).str.strip() == "") | 
+                    (df_fixtures[c_res].astype(str).str.strip() == "-")
+                )
+                df_budouci = df_fixtures[mask_budouci].copy()
+            else:
+                df_budouci = df_fixtures.copy()
 
-            # 4. Mapování log (očištěné)
-            df_budouci[' '] = df_budouci[col_home].astype(str).str.strip().map(LOGA_TYMU)
-            df_budouci['  '] = df_budouci[col_away].astype(str).str.strip().map(LOGA_TYMU)
-            
-            # 5. Výběr a přejmenování pro zobrazení
-            zobrazeni_cols = {
-                col_date: 'Datum',
-                col_time: 'Čas/Místo',
-                ' ': ' ',
-                col_home: 'Domácí',
-                col_away: 'Hosté',
-                '  ': '  '
-            }
-            
-            # Vybereme jen ty, které v datech existují
-            existujici_cols = [c for c in zobrazeni_cols.keys() if c in df_budouci.columns or c in [' ', '  ']]
-            df_disp = df_budouci[existujici_cols].rename(columns=zobrazeni_cols)
-            
-            st.dataframe(
-                df_disp, 
-                column_config={
-                    " ": st.column_config.ImageColumn(" "), 
-                    "  ": st.column_config.ImageColumn(" ")
-                }, 
-                use_container_width=True, 
-                hide_index=True
-            )
-            st.info(f"Nalezeno {len(df_budouci)} budoucích zápasů.")
+            if not df_budouci.empty:
+                # 3. Přidání log (s ošetřením chyb v názvech)
+                df_budouci[' '] = df_budouci[c_home].astype(str).str.strip().map(LOGA_TYMU)
+                df_budouci['  '] = df_budouci[c_away].astype(str).str.strip().map(LOGA_TYMU)
+                
+                # 4. Výběr sloupců pro zobrazení
+                vystupni_cols = []
+                mapping_final = {}
+
+                # Poskládáme tabulku podle toho, co máme k dispozici
+                if c_date: 
+                    vystupni_cols.append(c_date)
+                    mapping_final[c_date] = 'Datum'
+                
+                vystupni_cols.extend([' ', c_home, c_away, '  '])
+                mapping_final[c_home] = 'Domácí'
+                mapping_final[c_away] = 'Hosté'
+
+                df_final = df_budouci[vystupni_cols].rename(columns=mapping_final)
+
+                st.dataframe(
+                    df_final,
+                    column_config={
+                        " ": st.column_config.ImageColumn(" "),
+                        "  ": st.column_config.ImageColumn(" ")
+                    },
+                    use_container_width=True,
+                    hide_index=True
+                )
+                st.info(f"Aktuálně naplánováno {len(df_final)} zápasů.")
+            else:
+                st.info("Žádné nadcházející zápasy nebyly nalezeny.")
         else:
-            st.warning("V souboru nebyly nalezeny žádné budoucí zápasy (všechny mají pravděpodobně vyplněný výsledek).")
+            st.error("V souboru chybí sloupce s týmy. Dostupné sloupce: " + str(cols))
     else:
-        st.error("Data z FixtureDownload se nepodařilo načíst.")
-            
-        # Mapování log (očištěné)
-        df_budouci[' '] = df_budouci['Home Team'].str.strip().map(LOGA_TYMU)
-        df_budouci['  '] = df_budouci['Away Team'].str.strip().map(LOGA_TYMU)
+        st.error("Data se nepodařilo stáhnout. Zkontrolujte připojení k FixtureDownload.com.")
         
-        cols = ['Date', 'Time', ' ', 'Home Team', 'Away Team', '  ', 'Location']
-        df_disp = df_budouci[cols].rename(columns={'Home Team': 'Domácí', 'Away Team': 'Hosté', 'Location': 'Stadion', 'Date': 'Datum', 'Time': 'Čas'})
-        
-        st.dataframe(df_disp, column_config={" ": st.column_config.ImageColumn(" "), "  ": st.column_config.ImageColumn(" ")}, use_container_width=True, hide_index=True)
