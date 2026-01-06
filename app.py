@@ -113,54 +113,41 @@ if volba == "Přehled ligy":
 #Analyza tymu
 elif volba == "Analýza":
     st.header("📊 Detailní analýza faulů")
+    
     if df_tab is not None:
-        # 1. Najdeme sloupec s fauly (hledáme nejčastější zkratky)
-        mozne_nazvy = ['Fls', 'Fouls', 'Fauly', 'FC'] # FC jako Fouls Committed
-        sloupec_fauly = None
+        # 1. Zjistíme, jak se sloupce skutečně jmenují (výpis pro tebe)
+        # st.write("Dostupné sloupce:", list(df_tab.columns))
         
-        for nazeve in mozne_nazvy:
-            if nazeve in df_tab.columns:
-                sloupec_fauly = nazeve
+        # 2. Hledáme sloupec s fauly (zkusíme nejčastější verze)
+        sloupec = None
+        for kandidat in ['Fls', 'Fouls', 'Fauly', 'FC', 'F']:
+            if kandidat in df_tab.columns:
+                sloupec = kandidat
                 break
         
-        if sloupec_fauly:
+        if sloupec:
             # Příprava dat
-            df_an = df_tab[['Tým', sloupec_fauly]].copy()
-            df_an[sloupec_fauly] = pd.to_numeric(df_an[sloupec_fauly], errors='coerce')
-            df_an = df_an.sort_values(by=sloupec_fauly, ascending=False)
+            df_an = df_tab[['Tým', sloupec]].copy()
+            df_an[sloupec] = pd.to_numeric(df_an[sloupec], errors='coerce')
+            df_an = df_an.sort_values(by=sloupec, ascending=False)
             
-            prumer_faulu = df_an[sloupec_fauly].mean()
+            # Výpočet průměru
+            prumer = df_an[sloupec].mean()
+            st.write(f"### Průměr ligy: {prumer:.2f} faulů")
 
-            # Tvorba grafu přes Altair
-            import altair as alt
-            
-            base = alt.Chart(df_an).encode(
-                x=alt.X('Tým:N', sort='-y', title='Tým')
-            )
+            # 3. Sloupcový graf (jednoduchý Streamlit bar chart)
+            # Nastavíme Tým jako index, aby byl na ose X
+            df_graf = df_an.set_index('Tým')
+            st.bar_chart(df_graf)
 
-            bars = base.mark_bar(color='skyblue').encode(
-                y=alt.Y(f'{sloupec_fauly}:Q', title='Počet faulů')
-            )
-
-            line = alt.Chart(pd.DataFrame({'y': [prumer_faulu]})).mark_rule(
-                color='red', 
-                strokeDash=[5, 5],
-                size=2
-            ).encode(y='y:Q')
-
-            # Zobrazení grafu
-            st.altair_chart(bars + line, use_container_width=True)
-            
-            st.write(f"**Průměrný počet faulů na tým:** {prumer_faulu:.2f}")
-            st.dataframe(df_an.reset_index(drop=True), use_container_width=True)
-            
+            # 4. Tabulka pod tím
+            st.dataframe(df_an, use_container_width=True, hide_index=True)
         else:
-            # Pokud se nic nenajde, vypíšeme dostupné sloupce pro ladění
-            st.error("Nepodařilo se najít sloupec s fauly.")
-            st.write("Dostupné sloupce v tvém souboru jsou:", list(df_tab.columns))
+            st.error("V tabulce chybí sloupec s fauly. Zkontroluj, jestli se nejmenuje jinak.")
+            st.write("Tvoje sloupce jsou:", list(df_tab.columns))
     else:
-        st.info("Nahrajte prosím data pro analýzu.")
-
+        st.info("Nejsou k dispozici žádná data.")
+        
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
 elif volba == "Nadcházející zápasy":
