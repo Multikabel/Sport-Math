@@ -234,32 +234,31 @@ elif volba == "Simulátor zápasů":
     if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
     if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
-          # --- SROVNÁVACÍ TABULKA A FORMA (FIXNÍ HTML VERZE) ---
+         # --- SROVNÁVACÍ TABULKA A FORMA (FINÁLNÍ FIXNÍ LAYOUT) ---
     st.subheader("📊 Srovnání a Forma")
     
-    # Celý blok v jednom HTML, aby se sloupce na mobilu neřadily pod sebe
     forma_html = f"""
-    <div style="width: 100%; font-family: sans-serif; margin-bottom: 10px;">
+    <div style="width: 100%; font-family: sans-serif; margin-bottom: 15px; border: 1px solid #f0f2f6; padding: 10px; border-radius: 10px;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <div style="width: 20%; text-align: left;">
-                <img src="{logo1}" width="25">
+            <div style="width: 15%; text-align: left;">
+                <img src="{logo1}" width="35">
             </div>
-            <div style="width: 60%; text-align: center; font-weight: bold; font-size: 0.85rem; white-space: nowrap;">
+            <div style="width: 70%; text-align: center; font-weight: bold; font-size: 1rem; color: #31333F;">
                 {t1} — {t2}
             </div>
-            <div style="width: 20%; text-align: right;">
-                <img src="{logo2}" width="25">
+            <div style="width: 15%; text-align: right;">
+                <img src="{logo2}" width="35">
             </div>
         </div>
         
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 5px;">
-            <div style="width: 45%; text-align: center; font-size: 0.8rem;">
+        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 8px;">
+            <div style="width: 35%; text-align: center; font-size: 0.9rem; letter-spacing: 2px;">
                 {ziskej_formu(t1, df_hist)}
             </div>
-            <div style="width: 10%; text-align: center; color: transparent;">
-                vs
+            <div style="width: 10%; text-align: center; color: #ddd; font-size: 0.7rem;">
+                VS
             </div>
-            <div style="width: 45%; text-align: center; font-size: 0.8rem;">
+            <div style="width: 35%; text-align: center; font-size: 0.9rem; letter-spacing: 2px;">
                 {ziskej_formu(t2, df_hist)}
             </div>
         </div>
@@ -268,4 +267,4 @@ elif volba == "Simulátor zápasů":
     st.markdown(forma_html, unsafe_allow_html=True)
     
     st.write("---")
-    
+     
