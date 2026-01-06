@@ -234,12 +234,29 @@ elif volba == "Simulátor zápasů":
     if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
     if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
+        # --- SROVNÁVACÍ TABULKA A FORMA ---
     st.subheader("📊 Srovnání a Forma")
-    st.write(f"**Forma {t1}:** {ziskej_formu(t1, df_hist)} | **Forma {t2}:** {ziskej_formu(t2, df_hist)}")
+    
+    # Formátování formy pod sebou (každý tým vlastní řádek)
+    c_f1, c_f2 = st.columns([1, 10]) # Sloupec pro logo a sloupec pro text
+    with c_f1:
+        st.image(logo1, width=30)
+    with c_f2:
+        st.write(f"**{t1}:** {ziskej_formu(t1, df_hist)}")
+        
+    c_f3, c_f4 = st.columns([1, 10])
+    with c_f3:
+        st.image(logo2, width=30)
+    with c_f4:
+        st.write(f"**{t2}:** {ziskej_formu(t2, df_hist)}")
+    
+    st.write("") # Mezera před tabulkou
+
     res_df = pd.DataFrame({
         "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohy", "Fauly", "Žluté karty"],
         t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)],
         t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]
     })
     st.table(res_df)
+
             
