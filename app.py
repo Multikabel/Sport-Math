@@ -234,33 +234,25 @@ elif volba == "Simulátor zápasů":
     if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
     if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
-         # --- SROVNÁVACÍ TABULKA A FORMA ---
+          # --- SROVNÁVACÍ TABULKA A FORMA (KOMPAKTNÍ VERZE) ---
     st.subheader("📊 Srovnání a Forma")
     
-    # První řádek: Logo, Tým - Tým, Logo
-    c_row1_1, c_row1_2, c_row1_3 = st.columns([1, 2, 1])
-    with c_row1_1:
-        st.image(logo1, width=50)
-    with c_row1_2:
-        st.markdown(f"<h3 style='text-align: center; margin: 0;'>{t1} — {t2}</h3>", unsafe_allow_html=True)
-    with c_row1_3:
-        # Zarovnání loga hostů doprava, aby to bylo symetrické
-        st.markdown(f"<div style='text-align: right;'><img src='{logo2}' width='50'></div>", unsafe_allow_html=True)
+    # První řádek: Malé logo, Tým - Tým, Malé logo (vše v malém písmu)
+    c_f1, c_f2, c_f3 = st.columns([1, 4, 1])
+    with c_f1:
+        st.image(logo1, width=25)
+    with c_f2:
+        # Použijeme klasický tučný text místo nadpisu h3
+        st.markdown(f"<p style='text-align: center; font-weight: bold; margin: 0; font-size: 0.9rem;'>{t1} — {t2}</p>", unsafe_allow_html=True)
+    with c_f3:
+        st.markdown(f"<div style='text-align: right;'><img src='{logo2}' width='25'></div>", unsafe_allow_html=True)
 
-    # Druhý řádek: Forma domácí, Forma hosté
-    c_row2_1, c_row2_2 = st.columns(2)
-    with c_row2_1:
-        st.markdown(f"<div style='text-align: center;'>{ziskej_formu(t1, df_hist)}</div>", unsafe_allow_html=True)
-    with c_row2_2:
-        st.markdown(f"<div style='text-align: center;'>{ziskej_formu(t2, df_hist)}</div>", unsafe_allow_html=True)
+    # Druhý řádek: Forma domácí vs Forma hosté (centrované pod jmény)
+    c_f4, c_f5 = st.columns(2)
+    with c_f4:
+        st.markdown(f"<div style='text-align: center; font-size: 0.8rem;'>{ziskej_formu(t1, df_hist)}</div>", unsafe_allow_html=True)
+    with c_f5:
+        st.markdown(f"<div style='text-align: center; font-size: 0.8rem;'>{ziskej_formu(t2, df_hist)}</div>", unsafe_allow_html=True)
     
-    st.write("---") # Oddělující čára před tabulkou průměrů
-
-    # Tabulka průměrů (stejná jako dříve)
-    res_df = pd.DataFrame({
-        "Metrika": ["Góly vstřelené", "Góly inkasované", "Rohy", "Fauly", "Žluté karty"],
-        t1: [round(s1["G_v"], 2), round(s1["G_i"], 2), round(s1["R"], 2), round(s1["F"], 2), round(s1["K"], 2)],
-        t2: [round(s2["G_v"], 2), round(s2["G_i"], 2), round(s2["R"], 2), round(s2["F"], 2), round(s2["K"], 2)]
-    })
-    st.table(res_df)
+    st.write("---")
    
