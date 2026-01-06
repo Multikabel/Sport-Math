@@ -17,7 +17,6 @@ LOGA_TYMU = {
     "Chelsea": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
     "Crystal Palace": "https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg",
     "Everton": "https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg",
-    "Fulham": "https://upload.wikimedia.org/wikipedia/en/3/3f/Fulham_FC_%28shield%29.svg",
     "Leeds United": "https://upload.wikimedia.org/wikipedia/en/5/54/Leeds_United_F.C._logo.svg",
     "Leeds": "https://upload.wikimedia.org/wikipedia/en/5/54/Leeds_United_F.C._logo.svg",
     "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
@@ -28,20 +27,13 @@ LOGA_TYMU = {
     "Nott'm Forest": "https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg",
     "Southampton": "https://upload.wikimedia.org/wikipedia/en/c/c9/Southampton_FC.svg",
     "Spurs": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg", # Oprava pro Tottenham
-    "Sunderland": "https://upload.wikimedia.org/wikipedia/en/6/60/Sunderland_AFC_logo.svg", # NOVÉ LOGO
     "Tottenham": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
     "West Ham": "https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg",
     "Wolves": "https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg",
     "Aston Villa": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
-    "Aston Villa ": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
-    "Villa": "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_%282016%29.svg",
-    "Sunderland": "https://upload.wikimedia.org/wikipedia/en/6/60/Sunderland_AFC_logo.svg",
-    "Sunderland AFC": "https://upload.wikimedia.org/wikipedia/en/6/60/Sunderland_AFC_logo.svg",
-    "Fulham": "https://upload.wikimedia.org/wikipedia/en/3/3f/Fulham_FC_%28shield%29.svg",
-    "Fulham FC": "https://upload.wikimedia.org/wikipedia/en/3/3f/Fulham_FC_%28shield%29.svg",
-    "Burnley": "https://upload.wikimedia.org/wikipedia/en/6/62/Burnley_F.C._Logo.svg",
-    "Burnley FC": "https://upload.wikimedia.org/wikipedia/en/6/62/Burnley_F.C._Logo.svg",
-    
+    "Sunderland": "https://upload.wikimedia.org/wikipedia/en/thumb/6/60/Sunderland_AFC_logo.svg/200px-Sunderland_AFC_logo.svg.png",
+    "Fulham": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3f/Fulham_FC_%28shield%29.svg/200px-Fulham_FC_%28shield%29.svg.png",
+    "Burnley": "https://upload.wikimedia.org/wikipedia/en/thumb/6/62/Burnley_F.C._Logo.svg/200px-Burnley_F.C._Logo.svg.png"
 }
 
 
