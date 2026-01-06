@@ -1,29 +1,40 @@
 import pandas as pd
 import streamlit as st
+import requests
+import io
 
-# URL adresy
+# 1. Definice URL adres
 URL_STATS = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
 URL_FIXTURES = "https://fixturedownload.com/download/epl-2025-standardized.csv"
 
 @st.cache_data(ttl=3600)
 def nacti_vsechna_data():
-    # Načtení statistik (E0 = Premier League)
+    # Pomocná funkce pro stahování (FixtureDownload někdy vyžaduje User-Agent)
+    def stahni_csv(url):
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status() # Vyhodí chybu, pokud se stažení nepovede
+        return pd.read_csv(io.StringIO(response.text))
+
+    # Načtení statistik (Football-Data)
     try:
         df_stats = pd.read_csv(URL_STATS)
-    except:
+    except Exception as e:
+        st.warning(f"Nepodařilo se načíst statistiky z Football-Data: {e}")
         df_stats = None
-        st.error("Nepodařilo se načíst statistiky z Football-Data.co.uk")
 
-    # Načtení rozpisu zápasů
+    # Načtení rozpisu (FixtureDownload)
     try:
-        df_fix = pd.read_csv(URL_FIXTURES)
-    except:
+        df_fix = stahni_csv(URL_FIXTURES)
+    except Exception as e:
+        st.warning(f"Nepodařilo se načíst rozpis z FixtureDownload: {e}")
         df_fix = None
-        st.error("Nepodařilo se načíst rozpis z FixtureDownload.com")
         
     return df_stats, df_fix
 
+# 2. SAMOTNÉ VOLÁNÍ FUNKCE (Nahraď tímto původní df_hist = ...)
 df_hist, df_fixtures = nacti_vsechna_data()
+
 
 
 # CESTY K SOUBORŮM
