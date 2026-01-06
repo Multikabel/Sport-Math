@@ -234,7 +234,7 @@ elif volba == "Simulátor zápasů":
     if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
     if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
-          # --- SROVNÁVACÍ TABULKA A FORMA (VĚTŠÍ LOGA + CENTROVANÁ FORMA) ---
+         # --- SROVNÁVACÍ TABULKA A FORMA (VĚTŠÍ LOGA + CENTROVANÁ FORMA) ---
     st.subheader("📊 Srovnání a Forma")
     
     obsah_formy = f"""
@@ -267,4 +267,4 @@ elif volba == "Simulátor zápasů":
     
     st.markdown(obsah_formy, unsafe_allow_html=True)
     st.write("---")
-    
+     
