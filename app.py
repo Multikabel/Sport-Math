@@ -120,6 +120,9 @@ elif volba == "Nadcházející zápasy":
         df_kal[' '] = df_kal['Domácí'].str.strip().map(LOGA_TYMU)
         df_kal['  '] = df_kal['Hosté'].str.strip().map(LOGA_TYMU)
 
+        st.write("Týmy, které nebyly nalezeny v LOGA_TYMU:", df_kal[df_kal[' '].isna()]['Domácí'].unique())
+        
+
         # Definice pořadí sloupců (loga jsou u názvů týmů)
         # Sloupce se jmenují ' ' a '  ', aby v tabulce nezabíraly místo textem
         cols_order = ['Datum', 'Čas', ' ', 'Domácí', 'Hosté', '  ', 'Stadion']
