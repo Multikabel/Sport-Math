@@ -109,7 +109,8 @@ if volba == "Přehled ligy":
         else:
             st.error("Chyba v názvech sloupců tabulky.")
 
-# --- ANALÝZA TÝMU (100% POMĚR - STABILNÍ VERZE) ---
+
+# --- ANALÝZA TÝMU (FIXNUTÉ POZICE ČÍSEL) ---
 elif volba == "Analýza týmu":
     st.header("📊 Poměr faulů: Udělané vs. Obdržené (%)")
     
@@ -121,7 +122,6 @@ elif volba == "Analýza týmu":
             data_list = []
 
             for t in týmy:
-                # Výpočet zápasů a faulů
                 z = len(df_hist[(df_hist[c_dt] == t) | (df_hist[c_ht] == t)])
                 if z == 0: continue
                 f_ud = df_hist[df_hist[c_dt] == t][c_fd].sum() + df_hist[df_hist[c_ht] == t][c_fh].sum()
@@ -133,40 +133,48 @@ elif volba == "Analýza týmu":
             df_plot = pd.DataFrame(data_list)
             import altair as alt
 
-            # 1. ZÁKLAD PRO SLOUPEČKY
+            # Společné řazení pro všechny vrstvy
+            sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
+
+            # 1. SLOUPEČKY (100% šířka)
             bars = alt.Chart(df_plot).mark_bar(height=30).encode(
-                y=alt.Y('Tým:N', title=None, sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending")),
+                y=alt.Y('Tým:N', title=None, sort=sort_order),
                 x=alt.X('Hodnota:Q', stack='normalize', axis=None),
                 color=alt.Color('Typ:N', 
                                 scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']),
                                 legend=alt.Legend(orient='top', title=None))
             )
 
-            # 2. TEXT PRO "UDĚLANÉ" (Zarovnáno vlevo)
+            # 2. TEXT PRO "UDĚLANÉ" (Vynuceně na začátku - x=0)
             text_udělany = alt.Chart(df_plot[df_plot['Typ'] == 'Udělané']).mark_text(
                 align='left', baseline='middle', dx=10, color='white', fontWeight='bold', fontSize=13
             ).encode(
-                y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending")),
-                x=alt.X('Hodnota:Q', stack='normalize'),
+                y=alt.Y('Tým:N', sort=sort_order),
+                x=alt.value(0), # Tady je fix: začátek sloupce
                 text=alt.Text('Hodnota:Q', format='.1f')
             )
 
-            # 3. TEXT PRO "OBDRŽENÉ" (Zarovnáno vpravo)
+            # 3. TEXT PRO "OBDRŽENÉ" (Vynuceně na konci - x=šířka grafu)
+            # Použijeme pomocný výpočet pro pravý okraj (v normalize režimu je to 1)
             text_obdrzeny = alt.Chart(df_plot[df_plot['Typ'] == 'Obdržené']).mark_text(
                 align='right', baseline='middle', dx=-10, color='white', fontWeight='bold', fontSize=13
             ).encode(
-                y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending")),
-                x=alt.X('Hodnota:Q', stack='normalize'),
+                y=alt.Y('Tým:N', sort=sort_order),
+                x=alt.value(1150 if 'container_width' else 600), # Fix pro pravý okraj (přizpůsobí se šířce)
+                text=alt.Text('Hodnota:Q', format='.1f')
+            )
+            
+            # Pokud x=alt.value dává problémy s responzivitou, použijeme toto jistější řešení:
+            text_obdrzeny = alt.Chart(df_plot[df_plot['Typ'] == 'Obdržené']).mark_text(
+                align='right', baseline='middle', dx=-10, color='white', fontWeight='bold', fontSize=13
+            ).encode(
+                y=alt.Y('Tým:N', sort=sort_order),
+                x=alt.X('sum(Hodnota):Q', stack='normalize'), # Suma obou hodnot v normalize je vždy konec
                 text=alt.Text('Hodnota:Q', format='.1f')
             )
 
-            # Sestavení grafu z vrstev
             st.altair_chart((bars + text_udělany + text_obdrzeny).properties(height=700), use_container_width=True)
             
-        else:
-            st.error("Chyba v detekci sloupců.")
-            
-
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
 elif volba == "Nadcházející zápasy":
