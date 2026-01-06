@@ -101,37 +101,66 @@ elif volba == "Týmové statistiky":
 
 # --- 3. SIMULÁTOR ZÁPASŮ (Místo nespolehlivých příštích zápasů) ---
 elif volba == "Simulátor zápasů":
-    st.header("Analýza konkrétního střetnutí")
+    st.header("Analýza a predikce střetnutí")
     týmy = sorted(df_hist['HomeTeam'].unique())
     
-    col1, col2 = st.columns(2)
-    t1 = col1.selectbox("Domácí tým", týmy, index=0)
-    t2 = col2.selectbox("Hostující tým", týmy, index=1)
+    # --- VÝBĚR TÝMŮ A LOGA V JEDNOM ŘÁDKU ---
+    # Horní lišta pro domácí
+    t1 = st.selectbox("Domácí tým (výběr):", týmy, index=0)
     
-    col1.image(LOGA_TYMU.get(t1, ""), width=100)
-    col2.image(LOGA_TYMU.get(t2, ""), width=100)
+    # Prostřední řádek s logy
+    col_l, col_empty, col_r = st.columns([1, 2, 1])
+    with col_l:
+        st.image(LOGA_TYMU.get(t1, ""), width=120)
+        st.caption("DOMÁCÍ")
+    with col_r:
+        st.image(LOGA_TYMU.get(t2 if 't2' in locals() else týmy[1], ""), width=120)
+        st.caption("HOSTÉ")
+        
+    # Spodní lišta pro hosty
+    t2 = st.selectbox("Hostující tým (výběr):", týmy, index=1)
     
     st.write("---")
-    st.subheader("Rychlé srovnání (Průměry)")
     
-    # Funkce pro výpočet průměrů týmu
+    # --- VÝPOČTY STATISTIK ---
     def get_stats(team):
         d = df_hist[df_hist['HomeTeam'] == team]
         v = df_hist[df_hist['AwayTeam'] == team]
         z = len(d) + len(v)
         return {
-            "Góly": (d['FTHG'].sum() + v['FTAG'].sum()) / z,
-            "Inkasované": (d['FTAG'].sum() + v['FTHG'].sum()) / z,
+            "G_vstr": (d['FTHG'].sum() + v['FTAG'].sum()) / z,
+            "G_ink": (d['FTAG'].sum() + v['FTHG'].sum()) / z,
             "Rohy": (d['HC'].sum() + v['AC'].sum()) / z,
-            "Karty": (d['HY'].sum() + v['AY'].sum()) / z
+            "Karty": (d['HY'].sum() + v['AY'].sum()) / z,
+            "Fauly": (d['HF'].sum() + v['AF'].sum()) / z
         }
     
     s1, s2 = get_stats(t1), get_stats(t2)
     
+    # --- PREDIKCE SKÓRE ---
+    # Jednoduchý model: (Útok A + Obrana B) / 2
+    pred_domaci = (s1["G_vstr"] + s2["G_ink"]) / 2
+    pred_hoste = (s2["G_vstr"] + s1["G_ink"]) / 2
+    
+    st.subheader("🎯 Predikce výsledku")
+    p1, p2, p3 = st.columns(3)
+    p1.metric(f"Očekávané góly {t1}", round(pred_domaci, 2))
+    p2.metric("Předpokládané skóre", f"{round(pred_domaci)} : {round(pred_hoste)}")
+    p3.metric(f"Očekávané góly {t2}", round(pred_hoste, 2))
+    
+    st.write("---")
+    
+    # --- SROVNÁVACÍ TABULKA ---
+    st.subheader("📊 Detailní srovnání (Průměry na zápas)")
     res_df = pd.DataFrame({
-        "Metrika": ["Vstřelené góly", "Inkasované góly", "Rohové kopy", "Žluté karty"],
-        t1: [round(s1["Góly"], 2), round(s1["Inkasované"], 2), round(s1["Rohy"], 2), round(s1["Karty"], 2)],
-        t2: [round(s2["Góly"], 2), round(s2["Inkasované"], 2), round(s2["Rohy"], 2), round(s2["Karty"], 2)]
+        "Metrika": ["Vstřelené góly", "Inkasované góly", "Rohové kopy", "Fauly", "Žluté karty"],
+        t1: [round(s1["G_vstr"], 2), round(s1["G_ink"], 2), round(s1["Rohy"], 2), round(s1["Fauly"], 2), round(s1["Karty"], 2)],
+        t2: [round(s2["G_vstr"], 2), round(s2["G_ink"], 2), round(s2["Rohy"], 2), round(s2["Fauly"], 2), round(s2["Karty"], 2)]
     })
     
     st.table(res_df)
+
+    # --- DOPLŇKOVÉ INFO ---
+    st.info(f"Analýza vychází z {len(df_hist)} odehraných zápasů sezóny 25/26.")
+    
+        
