@@ -234,37 +234,39 @@ elif volba == "Simulátor zápasů":
     if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
     if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
-         # --- SROVNÁVACÍ TABULKA A FORMA (FINÁLNÍ FIXNÍ LAYOUT) ---
+          # --- SROVNÁVACÍ TABULKA A FORMA (OPRAVA ZOBRAZENÍ HTML) ---
     st.subheader("📊 Srovnání a Forma")
     
-    forma_html = f"""
-    <div style="width: 100%; font-family: sans-serif; margin-bottom: 15px; border: 1px solid #f0f2f6; padding: 10px; border-radius: 10px;">
+    # Příprava HTML do proměnné
+    obsah_formy = f"""
+    <div style="width: 100%; font-family: sans-serif; margin-bottom: 15px; border: 1px solid #f0f2f6; padding: 12px 5px; border-radius: 10px; background-color: #fafafa;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div style="width: 15%; text-align: left;">
-                <img src="{logo1}" width="35">
+                <img src="{logo1}" width="38">
             </div>
-            <div style="width: 70%; text-align: center; font-weight: bold; font-size: 1rem; color: #31333F;">
+            <div style="width: 70%; text-align: center; font-weight: bold; font-size: 1.05rem; color: #31333F;">
                 {t1} — {t2}
             </div>
             <div style="width: 15%; text-align: right;">
-                <img src="{logo2}" width="35">
+                <img src="{logo2}" width="38">
             </div>
         </div>
-        
-        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 8px;">
-            <div style="width: 35%; text-align: center; font-size: 0.9rem; letter-spacing: 2px;">
+        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 10px;">
+            <div style="width: 40%; text-align: center; font-size: 1rem;">
                 {ziskej_formu(t1, df_hist)}
             </div>
-            <div style="width: 10%; text-align: center; color: #ddd; font-size: 0.7rem;">
+            <div style="width: 20%; text-align: center; color: #bbb; font-size: 0.65rem; font-weight: bold;">
                 VS
             </div>
-            <div style="width: 35%; text-align: center; font-size: 0.9rem; letter-spacing: 2px;">
+            <div style="width: 40%; text-align: center; font-size: 1rem;">
                 {ziskej_formu(t2, df_hist)}
             </div>
         </div>
     </div>
     """
-    st.markdown(forma_html, unsafe_allow_html=True)
+    
+    # TENTO ŘÁDEK JE KLÍČOVÝ - nesmí být v žádném bloku s uvozovkami navíc
+    st.markdown(obsah_formy, unsafe_allow_html=True)
     
     st.write("---")
-     
+   
