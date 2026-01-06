@@ -110,31 +110,35 @@ if volba == "Přehled ligy":
             st.error("Chyba v názvech sloupců tabulky.")
 
 # --- ANALÝZA TÝMU ---
+# --- ANALÝZA TÝMU ---
 elif volba == "Analýza týmu":
     st.header("📊 Detailní analýza faulů")
     
-    # Změna zdroje: Použijeme df_hist místo df_tab
     if df_hist is not None:
-        # 1. Hledáme sloupec s fauly v historických datech
-        sloupec = None
-        for kandidat in ['Fls', 'Fouls', 'Fauly', 'FC', 'F']:
-            if kandidat in df_hist.columns:
-                sloupec = kandidat
-                break
-        
-        if sloupec:
-            # Příprava dat (seskupení podle týmu, pokud je v souboru více zápasů)
-            df_an = df_hist.groupby('Tým')[sloupec].sum().reset_index()
-            df_an = df_an.sort_values(by=sloupec, ascending=False)
+        # Ověříme, zda sloupce existují
+        if "Fauly_Domaci" in df_hist.columns and "Fauly_Hoste" in df_hist.columns and "Domácí" in df_hist.columns and "Hosté" in df_hist.columns:
             
-            prumer = df_an[sloupec].mean()
+            # 1. Výpočet faulů pro domácí týmy
+            fauly_home = df_hist.groupby('Domácí')['Fauly_Domaci'].sum().reset_index()
+            fauly_home.columns = ['Tým', 'Fauly']
+            
+            # 2. Výpočet faulů pro hostující týmy
+            fauly_away = df_hist.groupby('Hosté')['Fauly_Hoste'].sum().reset_index()
+            fauly_away.columns = ['Tým', 'Fauly']
+            
+            # 3. Spojení a celkový součet
+            df_total = pd.concat([fauly_home, fauly_away])
+            df_an = df_total.groupby('Tým')['Fauly'].sum().reset_index()
+            df_an = df_an.sort_values(by='Fauly', ascending=False)
+            
+            prumer = df_an['Fauly'].mean()
 
-            # 2. Vytvoření grafu (Altair)
+            # --- GRAF (Altair) ---
             import altair as alt
 
             bars = alt.Chart(df_an).mark_bar(color='skyblue').encode(
                 x=alt.X('Tým:N', sort='-y', title='Tým'),
-                y=alt.Y(f'{sloupec}:Q', title='Celkový počet faulů')
+                y=alt.Y('Fauly:Q', title='Celkový počet faulů')
             )
 
             line = alt.Chart(pd.DataFrame({'y': [prumer]})).mark_rule(
@@ -149,14 +153,15 @@ elif volba == "Analýza týmu":
 
             st.altair_chart(bars + line + label, use_container_width=True)
 
-            # 3. Tabulka pod tím
-            st.write(f"**Průměrný počet faulů na tým:** {prumer:.2f}")
+            # 4. Tabulka
+            st.write(f"**Průměrný počet faulů na tým v lize:** {prumer:.2f}")
             st.dataframe(df_an, use_container_width=True, hide_index=True)
+            
         else:
-            st.error("Ani v souboru PL_2526_komplet_vse.csv nebyl nalezen sloupec s fauly.")
-            st.write("Dostupné sloupce v tomto souboru:", list(df_hist.columns))
+            st.error("V datech chybí potřebné sloupce (Fauly_Domaci, Fauly_Hoste, Domácí, Hosté).")
+            st.write("Dostupné sloupce:", list(df_hist.columns))
     else:
-        st.info("Soubor s kompletními statistikami nebyl načten.")
+        st.info("Soubor PL_2526_komplet_vse.csv nebyl načten.")
             
 
 
