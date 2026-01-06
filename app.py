@@ -100,43 +100,42 @@ elif volba == "Týmové statistiky":
     st.altair_chart((bars + txt_ud + txt_ob).properties(height=700), use_container_width=True)
 
 # --- 3. SIMULÁTOR ZÁPASŮ (Místo nespolehlivých příštích zápasů) ---
+import scipy.stats as stats  # Budeme potřebovat pro Poissonovu distribuci
+
 elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
     týmy = sorted(df_hist['HomeTeam'].unique())
     
-    # 1. Lišta pro výběr domácího týmu
+    # 1. Výběr domácího týmu
     t1 = st.selectbox("Domácí tým (výběr):", týmy, index=0)
     
-    # 2. LOGA V JEDNOM ŘÁDKU (HTML TABULKA - neprůstřelné řešení)
-    # Získáme t2 dříve pro zobrazení loga, nebo použijeme session_state
+    # 2. LOGA V JEDNOM ŘÁDKU (HTML/Flexbox)
     t2_val = st.session_state.get('t2_select', týmy[1])
-    
-    logo1 = LOGA_TYMU.get(t1, "")
-    logo2 = LOGA_TYMU.get(t2_val, "")
+    logo1, logo2 = LOGA_TYMU.get(t1, ""), LOGA_TYMU.get(t2_val, "")
 
     html_kód = f"""
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
-        <div style="text-align: center;">
-            <img src="{logo1}" width="100"><br>
-            <span style="color: gray; font-size: 0.8rem;">DOMÁCÍ</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <div style="text-align: center; width: 30%;">
+            <img src="{logo1}" width="80"><br>
+            <span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span>
         </div>
-        <div style="flex-grow: 1; text-align: center;">
-            <h1 style="margin: 0; font-size: 3rem; color: #555;">VS</h1>
+        <div style="text-align: center; width: 40%;">
+            <h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1>
         </div>
-        <div style="text-align: center;">
-            <img src="{logo2}" width="100"><br>
-            <span style="color: gray; font-size: 0.8rem;">HOSTÉ</span>
+        <div style="text-align: center; width: 30%;">
+            <img src="{logo2}" width="80"><br>
+            <span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2_val.upper()}</span>
         </div>
     </div>
     """
     st.markdown(html_kód, unsafe_allow_html=True)
         
-    # 3. Lišta pro výběr hostujícího týmu
+    # 3. Výběr hostujícího týmu
     t2 = st.selectbox("Hostující tým (výběr):", týmy, index=1, key='t2_select')
     
     st.write("---")
     
-    # --- VÝPOČTY STATISTIK (zůstávají stejné) ---
+    # --- VÝPOČTY STATISTIK ---
     def get_stats(team):
         d = df_hist[df_hist['HomeTeam'] == team]
         v = df_hist[df_hist['AwayTeam'] == team]
@@ -152,15 +151,35 @@ elif volba == "Simulátor zápasů":
     
     s1, s2 = get_stats(t1), get_stats(t2)
     
-    # --- PREDIKCE ---
-    pred_domaci = (s1["G_vstr"] + s2["G_ink"]) / 2
-    pred_hoste = (s2["G_vstr"] + s1["G_ink"]) / 2
+    # Průměrné očekávané góly
+    mu_domaci = (s1["G_vstr"] + s2["G_ink"]) / 2
+    mu_hoste = (s2["G_vstr"] + s1["G_ink"]) / 2
     
-    st.subheader("🎯 Predikce výsledku")
+    # --- POISSONŮV VÝPOČET PRAVDĚPODOBNOSTÍ ---
+    prob_domaci, prob_hoste, prob_remiza = 0, 0, 0
+    # Simulujeme výsledky až do 10:10 gólů
+    for i in range(11):
+        for j in range(11):
+            p = stats.poisson.pmf(i, mu_domaci) * stats.poisson.pmf(j, mu_hoste)
+            if i > j: prob_domaci += p
+            elif i < j: prob_hoste += p
+            else: prob_remiza += p
+
+    # --- ZOBRAZENÍ PREDIKCE ---
+    st.subheader("🎯 Predikce a pravděpodobnosti")
+    
+    # Metriky očekávaného skóre
     p1, p2, p3 = st.columns(3)
-    p1.metric(f"Góly {t1}", round(pred_domaci, 2))
-    p2.metric("Předpokládané skóre", f"{round(pred_domaci)} : {round(pred_hoste)}")
-    p3.metric(f"Góly {t2}", round(pred_hoste, 2))
+    p1.metric(f"Očekávané góly {t1}", round(mu_domaci, 2))
+    p2.metric("Předpokládané skóre", f"{round(mu_domaci)} : {round(mu_hoste)}")
+    p3.metric(f"Očekávané góly {t2}", round(mu_hoste, 2))
+    
+    # Procentuální šance (1-X-2)
+    st.write("")
+    c1, c2, c3 = st.columns(3)
+    c1.info(f"**Výhra {t1}** \n{round(prob_domaci * 100, 1)} %")
+    c2.info(f"**Remíza** \n{round(prob_remiza * 100, 1)} %")
+    c3.info(f"**Výhra {t2}** \n{round(prob_hoste * 100, 1)} %")
     
     st.write("---")
     
@@ -170,6 +189,5 @@ elif volba == "Simulátor zápasů":
         t1: [round(s1["G_vstr"], 2), round(s1["G_ink"], 2), round(s1["Rohy"], 2), round(s1["Fauly"], 2), round(s1["Karty"], 2)],
         t2: [round(s2["G_vstr"], 2), round(s2["G_ink"], 2), round(s2["Rohy"], 2), round(s2["Fauly"], 2), round(s2["Karty"], 2)]
     })
-    
     st.table(res_df)
     
