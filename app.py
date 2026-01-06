@@ -109,7 +109,7 @@ if volba == "Přehled ligy":
         else:
             st.error("Chyba v názvech sloupců tabulky.")
 
-# --- ANALÝZA TÝMU (100% POMĚR) ---
+# --- ANALÝZA TÝMU (100% POMĚR - STABILNÍ VERZE) ---
 elif volba == "Analýza týmu":
     st.header("📊 Poměr faulů: Udělané vs. Obdržené (%)")
     
@@ -121,7 +121,9 @@ elif volba == "Analýza týmu":
             data_list = []
 
             for t in týmy:
+                # Výpočet zápasů a faulů
                 z = len(df_hist[(df_hist[c_dt] == t) | (df_hist[c_ht] == t)])
+                if z == 0: continue
                 f_ud = df_hist[df_hist[c_dt] == t][c_fd].sum() + df_hist[df_hist[c_ht] == t][c_fh].sum()
                 f_ob = df_hist[df_hist[c_dt] == t][c_fh].sum() + df_hist[df_hist[c_ht] == t][c_fd].sum()
                 
@@ -129,43 +131,41 @@ elif volba == "Analýza týmu":
                 data_list.append({'Tým': t, 'Typ': 'Obdržené', 'Hodnota': f_ob/z})
 
             df_plot = pd.DataFrame(data_list)
-
             import altair as alt
 
-            # ZÁKLAD GRAFU - stack='normalize' roztáhne sloupce na stejnou šířku
-            base = alt.Chart(df_plot).encode(
-                y=alt.Y('Tým:N', title=None),
-                x=alt.X('Hodnota:Q', stack='normalize', axis=None), # Skryjeme osu X, čísla jsou uvnitř
+            # 1. ZÁKLAD PRO SLOUPEČKY
+            bars = alt.Chart(df_plot).mark_bar(height=30).encode(
+                y=alt.Y('Tým:N', title=None, sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending")),
+                x=alt.X('Hodnota:Q', stack='normalize', axis=None),
                 color=alt.Color('Typ:N', 
-                                scale=alt.Scale(domain=['Udělané', 'Obdržené'], 
-                                              range=['#2ca02c', '#d62728']),
+                                scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']),
                                 legend=alt.Legend(orient='top', title=None))
             )
 
-            # 1. SLOUPEČKY
-            bars = base.mark_bar(height=30)
-
-            # 2. TEXTOVÉ ŠTÍTKY (natvrdo bílé)
-            text = base.mark_text(
-                baseline='middle',
-                fontSize=13,
-                fontWeight='bold',
-                color='white' # Vynucená bílá pro všechna čísla
+            # 2. TEXT PRO "UDĚLANÉ" (Zarovnáno vlevo)
+            text_udělany = alt.Chart(df_plot[df_plot['Typ'] == 'Udělané']).mark_text(
+                align='left', baseline='middle', dx=10, color='white', fontWeight='bold', fontSize=13
             ).encode(
-                # Zarovnání: Udělané vlevo, Obdržené vpravo
-                align=alt.expr("datum.Typ == 'Udělané' ? 'left' : 'right'"),
-                # Odsazení od krajů sloupce
-                dx=alt.expr("datum.Typ == 'Udělané' ? 10 : -10"),
-                text=alt.Text('Hodnota:Q', format='.1f'),
-                detail='Typ:N'
+                y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending")),
+                x=alt.X('Hodnota:Q', stack='normalize'),
+                text=alt.Text('Hodnota:Q', format='.1f')
             )
 
-            # Zobrazení
-            st.altair_chart((bars + text).properties(height=700), use_container_width=True)
+            # 3. TEXT PRO "OBDRŽENÉ" (Zarovnáno vpravo)
+            text_obdrzeny = alt.Chart(df_plot[df_plot['Typ'] == 'Obdržené']).mark_text(
+                align='right', baseline='middle', dx=-10, color='white', fontWeight='bold', fontSize=13
+            ).encode(
+                y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending")),
+                x=alt.X('Hodnota:Q', stack='normalize'),
+                text=alt.Text('Hodnota:Q', format='.1f')
+            )
+
+            # Sestavení grafu z vrstev
+            st.altair_chart((bars + text_udělany + text_obdrzeny).properties(height=700), use_container_width=True)
             
         else:
             st.error("Chyba v detekci sloupců.")
-                
+            
 
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
