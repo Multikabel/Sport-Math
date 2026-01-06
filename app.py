@@ -109,7 +109,7 @@ if volba == "Přehled ligy":
         else:
             st.error("Chyba v názvech sloupců tabulky.")
 
-# --- ANALÝZA TÝMU (PRŮMĚR NA ZÁPAS) ---
+# --- ANALÝZA TÝMU (PRŮMĚR NA ZÁPAS S ČÍSLY) ---
 elif volba == "Analýza týmu":
     st.header("📊 Průměrný počet faulů na zápas")
     
@@ -121,67 +121,59 @@ elif volba == "Analýza týmu":
 
         if all(c in df_hist.columns for c in [col_domaci_tym, col_hoste_tym, col_fauly_domaci, col_fauly_hoste]):
             
-            # 1. Statistiky DOMA (Součet faulů a počet zápasů)
-            home_stats = df_hist.groupby(col_domaci_tym).agg({
-                col_fauly_domaci: 'sum',
-                col_domaci_tym: 'count'
-            }).rename(columns={col_fauly_domaci: 'Fauly', col_domaci_tym: 'Zapasy'}).reset_index()
+            # 1. Výpočet statistik (Doma + Venku)
+            home_stats = df_hist.groupby(col_domaci_tym).agg({col_fauly_domaci: 'sum', col_domaci_tym: 'count'}).rename(columns={col_fauly_domaci: 'Fauly', col_domaci_tym: 'Zapasy'}).reset_index()
             home_stats.columns = ['Tým', 'Fauly_Home', 'Zapasy_Home']
             
-            # 2. Statistiky VENKU (Součet faulů a počet zápasů)
-            away_stats = df_hist.groupby(col_hoste_tym).agg({
-                col_fauly_hoste: 'sum',
-                col_hoste_tym: 'count'
-            }).rename(columns={col_fauly_hoste: 'Fauly', col_hoste_tym: 'Zapasy'}).reset_index()
+            away_stats = df_hist.groupby(col_hoste_tym).agg({col_fauly_hoste: 'sum', col_hoste_tym: 'count'}).rename(columns={col_fauly_hoste: 'Fauly', col_hoste_tym: 'Zapasy'}).reset_index()
             away_stats.columns = ['Tým', 'Fauly_Away', 'Zapasy_Away']
             
-            # 3. Spojení dat
             df_merged = pd.merge(home_stats, away_stats, on='Tým', how='outer').fillna(0)
             
-            # Výpočet celků a PRŮMĚRU
+            # Výpočet průměru na zápas
             df_merged['Celkem_Fauly'] = df_merged['Fauly_Home'] + df_merged['Fauly_Away']
             df_merged['Celkem_Zapasy'] = df_merged['Zapasy_Home'] + df_merged['Zapasy_Away']
-            
-            # Finální sloupec: Fauly na zápas
             df_merged['Fauly_na_Zapas'] = df_merged['Celkem_Fauly'] / df_merged['Celkem_Zapasy']
             
-            # Seřazení pro graf
             df_an = df_merged[['Tým', 'Fauly_na_Zapas']].sort_values(by='Fauly_na_Zapas', ascending=True)
-            
-            # Průměr celé ligy (průměr z průměrů)
             prumer_ligy = df_an['Fauly_na_Zapas'].mean()
 
             import altair as alt
 
-            # HORIZONTÁLNÍ GRAF
-            bars = alt.Chart(df_an).mark_bar(color='skyblue').encode(
+            # ZÁKLAD GRAFU
+            base = alt.Chart(df_an).encode(
                 y=alt.Y('Tým:N', sort='-x', title='Tým'),
-                x=alt.X('Fauly_na_Zapas:Q', title='Průměr faulů na 1 zápas'),
-                tooltip=['Tým', alt.Tooltip('Fauly_na_Zapas:Q', format='.2f')]
-            ).properties(height=600)
+                x=alt.X('Fauly_na_Zapas:Q', title='Průměr faulů na 1 zápas')
+            )
 
-            # Svislá linka průměru ligy
+            # 2. SLOUPEČKY
+            bars = base.mark_bar(color='skyblue').properties(height=600)
+
+            # 3. TEXTOVÉ ŠTÍTKY (čísla vedle sloupců)
+            text = base.mark_text(
+                align='left',
+                baseline='middle',
+                dx=5,  # Posun textu kousek doprava od konce sloupce
+                color='black'
+            ).encode(
+                text=alt.Text('Fauly_na_Zapas:Q', format='.2f')
+            )
+
+            # 4. SVISLÁ LINKA PRŮMĚRU
             line = alt.Chart(pd.DataFrame({'x': [prumer_ligy]})).mark_rule(
                 color='red', strokeDash=[5, 5], size=2
             ).encode(x='x:Q')
 
-            label = alt.Chart(pd.DataFrame({'x': [prumer_ligy]})).mark_text(
+            label_line = alt.Chart(pd.DataFrame({'x': [prumer_ligy]})).mark_text(
                 align='left', dx=5, dy=-20, color='red', text=f'Průměr ligy: {prumer_ligy:.2f}'
             ).encode(x='x:Q', y=alt.value(0))
 
-            st.altair_chart(bars + line + label, use_container_width=True)
-
-            # Tabulka pro kontrolu
-            st.write("**Detailní data:**")
-            st.dataframe(
-                df_merged[['Tým', 'Celkem_Zapasy', 'Celkem_Fauly', 'Fauly_na_Zapas']]
-                .sort_values(by='Fauly_na_Zapas', ascending=False),
-                use_container_width=True, hide_index=True
-            )
+            # Zobrazení všeho dohromady
+            st.altair_chart(bars + text + line + label_line, use_container_width=True)
             
         else:
             st.error("Chyba v detekci sloupců.")
-            
+               
 
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
