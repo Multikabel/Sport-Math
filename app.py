@@ -110,78 +110,72 @@ if volba == "Přehled ligy":
             st.error("Chyba v názvech sloupců tabulky.")
 
 # --- ANALÝZA TÝMU (PRŮMĚR NA ZÁPAS S ČÍSLY) ---
+# --- ANALÝZA TÝMU (POMĚR FAULŮ) ---
 elif volba == "Analýza týmu":
-    st.header("📊 Průměrný počet faulů na zápas")
+    st.header("📊 Poměr faulů: Udělané vs. Obdržené (na zápas)")
     
     if df_hist is not None:
-        col_domaci_tym = "Domaci_Tym"
-        col_hoste_tym = "Hoste_Tym"
-        col_fauly_domaci = "Fauly_Domaci"
-        col_fauly_hoste = "Fauly_Hoste"
+        # Definice sloupců
+        c_dt = "Domaci_Tym"
+        c_ht = "Hoste_Tym"
+        c_fd = "Fauly_Domaci"
+        c_fh = "Fauly_Hoste"
 
-        if all(c in df_hist.columns for c in [col_domaci_tym, col_hoste_tym, col_fauly_domaci, col_fauly_hoste]):
+        if all(c in df_hist.columns for c in [c_dt, c_ht, c_fd, c_fh]):
             
-            # 1. Výpočet statistik (Doma + Venku)
-            home_stats = df_hist.groupby(col_domaci_tym).agg({col_fauly_domaci: 'sum', col_domaci_tym: 'count'}).rename(columns={col_fauly_domaci: 'Fauly', col_domaci_tym: 'Zapasy'}).reset_index()
-            home_stats.columns = ['Tým', 'Fauly_Home', 'Zapasy_Home']
+            # 1. FAULY UDĚLANÉ (To, co tým spáchal)
+            ud_h = df_hist.groupby(c_dt).agg({c_fd: 'sum', c_dt: 'count'}).rename(columns={c_fd: 'F', c_dt: 'Z'}).reset_index()
+            ud_a = df_hist.groupby(c_ht).agg({c_fh: 'sum', c_ht: 'count'}).rename(columns={c_fh: 'F', c_ht: 'Z'}).reset_index()
             
-            away_stats = df_hist.groupby(col_hoste_tym).agg({col_fauly_hoste: 'sum', col_hoste_tym: 'count'}).rename(columns={col_fauly_hoste: 'Fauly', col_hoste_tym: 'Zapasy'}).reset_index()
-            away_stats.columns = ['Tým', 'Fauly_Away', 'Zapasy_Away']
-            
-            df_merged = pd.merge(home_stats, away_stats, on='Tým', how='outer').fillna(0)
-            
-            # Výpočet průměru na zápas
-            df_merged['Celkem_Fauly'] = df_merged['Fauly_Home'] + df_merged['Fauly_Away']
-            df_merged['Celkem_Zapasy'] = df_merged['Zapasy_Home'] + df_merged['Zapasy_Away']
-            df_merged['Fauly_na_Zapas'] = df_merged['Celkem_Fauly'] / df_merged['Celkem_Zapasy']
-            
-            df_an = df_merged[['Tým', 'Fauly_na_Zapas']].sort_values(by='Fauly_na_Zapas', ascending=True)
-            prumer_ligy = df_an['Fauly_na_Zapas'].mean()
+            # 2. FAULY OBDRŽENÉ (To, co udělal soupeř týmu)
+            ob_h = df_hist.groupby(c_dt).agg({c_fh: 'sum'}).rename(columns={c_fh: 'F'}).reset_index()
+            ob_a = df_hist.groupby(c_ht).agg({c_fd: 'sum'}).rename(columns={c_fd: 'F'}).reset_index()
+
+            # Sjednocení do jedné tabulky
+            týmy = df_hist[c_dt].unique()
+            data_list = []
+
+            for t in týmy:
+                zápasy = ud_h[ud_h[c_dt]==t]['Z'].sum() + ud_a[ud_a[c_ht]==t]['Z'].sum()
+                f_udělané = ud_h[ud_h[c_dt]==t]['F'].sum() + ud_a[ud_a[c_ht]==t]['F'].sum()
+                f_obdržené = ob_h[ob_h[c_dt]==t]['F'].sum() + ob_a[ob_a[c_ht]==t]['F'].sum()
+                
+                # Přidáme dva řádky pro každý tým (jeden pro Udělané, jeden pro Obdržené)
+                data_list.append({'Tým': t, 'Typ': 'Udělané', 'Hodnota': f_udělané/zápasy})
+                data_list.append({'Tým': t, 'Typ': 'Obdržené', 'Hodnota': f_obdržené/zápasy})
+
+            df_plot = pd.DataFrame(data_list)
 
             import altair as alt
 
-                        # ZÁKLAD GRAFU - přidáme scale s rezervou (domainMax), aby čísla nebyla na kraji
-            max_hodnota = df_an['Fauly_na_Zapas'].max() * 1.15 # 15% rezerva
-
-            base = alt.Chart(df_an).encode(
-                y=alt.Y('Tým:N', sort='-x', title='Tým'),
-                x=alt.X('Fauly_na_Zapas:Q', 
-                        title='Průměr faulů na 1 zápas',
-                        scale=alt.Scale(domain=[0, max_hodnota]) # Tímto zajistíme místo pro text
-                )
+            # GRAF
+            base = alt.Chart(df_plot).encode(
+                y=alt.Y('Tým:N', sort=alt.EncodingSortField(field="Hodnota", op="sum", order="descending"), title="Tým"),
+                x=alt.X('Hodnota:Q', title='Průměr faulů na zápas'),
+                color=alt.Color('Typ:N', 
+                                scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), # Zelená a červená
+                                legend=alt.Legend(title="Typ faulů"))
             )
 
-            # 2. SLOUPEČKY
-            bars = base.mark_bar(color='skyblue').properties(height=600)
+            # Sloupce (Stacked Bar)
+            bars = base.mark_bar().properties(height=700)
 
-            # 3. TEXTOVÉ ŠTÍTKY (vylepšené)
+            # Čísla uvnitř sloupců
             text = base.mark_text(
-                align='left',
+                align=alt.expr("datum.Typ == 'Udělané' ? 'left' : 'right'"),
                 baseline='middle',
-                dx=7,          # Větší odstup od sloupce
-                fontSize=12,   # Větší písmo
-                fontWeight='bold',
-                color='white'
+                dx=alt.expr("datum.Typ == 'Udělané' ? 5 : -5"),
+                color='white',
+                fontWeight='bold'
             ).encode(
-                text=alt.Text('Fauly_na_Zapas:Q', format='.2f')
+                text=alt.Text('Hodnota:Q', format='.2f')
             )
 
-
-            # 4. SVISLÁ LINKA PRŮMĚRU
-            line = alt.Chart(pd.DataFrame({'x': [prumer_ligy]})).mark_rule(
-                color='red', strokeDash=[5, 5], size=2
-            ).encode(x='x:Q')
-
-            label_line = alt.Chart(pd.DataFrame({'x': [prumer_ligy]})).mark_text(
-                align='left', dx=5, dy=-20, color='red', text=f'Průměr ligy: {prumer_ligy:.2f}'
-            ).encode(x='x:Q', y=alt.value(0))
-
-            # Zobrazení všeho dohromady
-            st.altair_chart(bars + text + line + label_line, use_container_width=True)
+            st.altair_chart(bars + text, use_container_width=True)
             
         else:
             st.error("Chyba v detekci sloupců.")
-               
+
 
 
 # 4. NADCHÁZEJÍCÍ ZÁPASY
