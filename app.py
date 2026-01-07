@@ -237,8 +237,9 @@ elif volba == "Simulátor zápasů":
          # --- SROVNÁVACÍ TABULKA A FORMA ---
     st.subheader("📊 Srovnání a Forma")
     
-    f1 = ziskej_formu(t1, df_hist)
-    f2 = ziskej_formu(t2, df_hist)
+    # Získání formy a otočení (nejnovější zápas vlevo)
+    f1 = ziskej_formu(t1, df_hist)[::-1]
+    f2 = ziskej_formu(t2, df_hist)[::-1]
     
     obsah_formy = """
     <div style="width: 100%; font-family: sans-serif; margin-bottom: 15px; border: 1px solid #f0f2f6; padding: 12px 5px; border-radius: 10px; background-color: #fafafa;">
