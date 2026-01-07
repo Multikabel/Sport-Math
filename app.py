@@ -240,28 +240,27 @@ elif volba == "Simulátor zápasů":
     f1 = ziskej_formu(t1, df_hist)
     f2 = ziskej_formu(t2, df_hist)
     
-    # HTML kód bez složitých f-stringů uvnitř, vše připraveno předem
     obsah_formy = """
     <div style="width: 100%; font-family: sans-serif; margin-bottom: 15px; border: 1px solid #f0f2f6; padding: 12px 5px; border-radius: 10px; background-color: #fafafa;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div style="width: 20%; text-align: left;">
-                <img src="{l1}" width="45">
+                <img src="{l1}" width="42">
             </div>
-            <div style="width: 60%; text-align: center; font-weight: bold; font-size: 1.1rem; color: #31333F;">
+            <div style="width: 60%; text-align: center; font-weight: bold; font-size: 1.0rem; color: #31333F;">
                 {n1} — {n2}
             </div>
             <div style="width: 20%; text-align: right;">
-                <img src="{l2}" width="45">
+                <img src="{l2}" width="42">
             </div>
         </div>
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 10px;">
-            <div style="width: 35%; text-align: right; font-size: 1.2rem; letter-spacing: 2px;">
+            <div style="width: 38%; text-align: right; font-size: 1.0rem;">
                 {forma1}
             </div>
-            <div style="width: 15%; text-align: center; color: #bbb; font-size: 0.7rem; font-weight: bold;">
+            <div style="width: 24%; text-align: center; color: #bbb; font-size: 0.65rem; font-weight: bold;">
                 VS
             </div>
-            <div style="width: 35%; text-align: left; font-size: 1.2rem; letter-spacing: 2px;">
+            <div style="width: 38%; text-align: left; font-size: 1.0rem;">
                 {forma2}
             </div>
         </div>
