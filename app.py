@@ -69,7 +69,8 @@ if df_hist is None:
     st.error("Nepodařilo se načíst data.")
     st.stop()
 
-# --- 3. SEKCE: TABULKA PL (OPRAVENÁ FORMA ZLEVA) ---
+
+ # --- 3. SEKCE: TABULKA PL ---
 if volba == "Tabulka PL":
     st.header("Aktuální pořadí Premier League 25/26")
     týmy = sorted(df_hist['HomeTeam'].unique())
@@ -80,7 +81,7 @@ if volba == "Tabulka PL":
         b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
         sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
         
-        # ZDE JE ZMĚNA: Přidáno [[::-1]] pro otočení formy (nejnovější zápas vlevo)
+        # Forma otočená (nejnovější zápas vlevo)
         forma_str = ziskej_formu(t, df_hist)[::-1]
         
         tabulka_data.append({
@@ -95,15 +96,33 @@ if volba == "Tabulka PL":
     df_res = pd.DataFrame(tabulka_data).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
     df_res.index += 1
     df_res.insert(0, ' ', df_res['Tým'].map(LOGA_TYMU))
-    
-    # Zobrazení tabulky
+
+    # Definice barevného zvýraznění (musí být definováno před st.dataframe)
+    def styluj_tabulku(x):
+        c1 = 'background-color: rgba(30, 144, 255, 0.1)' # Liga mistrů
+        c2 = 'background-color: rgba(255, 69, 0, 0.1)'   # Sestup
+        style_df = pd.DataFrame('', index=x.index, columns=x.columns)
+        if len(x) >= 4:
+            style_df.iloc[0:4, :] = c1
+        if len(x) >= 17:
+            style_df.iloc[-3:, :] = c2
+        return style_df
+
+    # Zobrazení kombinující barvy, loga i otočenou formu
     st.dataframe(
-        df_res, 
+        df_res.style.apply(styluj_tabulku, axis=None), 
         column_config={" ": st.column_config.ImageColumn(" ")}, 
         use_container_width=True, 
         hide_index=False
     )
-    
+
+    st.markdown("""
+    <div style="font-size: 0.8rem; display: flex; gap: 15px; margin-top: 10px;">
+        <div><span style="color: #1e90ff;">■</span> Liga mistrů</div>
+        <div><span style="color: #ff4500;">■</span> Sestupová zóna</div>
+    </div>
+    """, unsafe_allow_html=True)
+        
 
 
 # --- 4. SEKCE: TÝMOVÉ STATISTIKY ---
