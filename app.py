@@ -228,41 +228,49 @@ elif volba == "Simulátor zápasů":
 
         # --- VIZUALIZACE VÝSLEDKŮ (KOMPAKTNÍ ŘÁDEK 1) ---
 
-        # --- SJEDNOCENÝ PANEL STATISTIK (Opravený) ---
+        # Definice stylu pro tmavé boxy (můžeš dát na začátek simulátoru nebo přímo sem)
+    style_box = "background-color: #2b3035; padding: 15px; border-radius: 12px; color: white; margin-bottom: 5px; text-align: center;"
+
+    # 1. HORNÍ BOX (Góly a skóre)
     st.markdown(f"""
-    <div style="background-color: #2b3035; padding: 20px; border-radius: 12px; color: white; margin-bottom: 25px; font-family: sans-serif;">
-        <div style="display: flex; justify-content: space-around; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #444;">
-            <div style="text-align: center;">
+    <div style="{style_box} border-bottom: 1px solid #444; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <div>
                 <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Domácí</div>
                 <div style="font-size: 1.5rem; font-weight: bold; color: #4dabf7;">{round(mu_d, 2)}</div>
             </div>
-            <div style="text-align: center;">
+            <div>
                 <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">Predikce skóre</div>
                 <div style="font-size: 2rem; font-weight: bold;">{round(mu_d)} : {round(mu_h)}</div>
             </div>
-            <div style="text-align: center;">
+            <div>
                 <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Hosté</div>
                 <div style="font-size: 1.5rem; font-weight: bold; color: #ff6b6b;">{round(mu_h, 2)}</div>
-            </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-around; align-items: center; padding-top: 15px;">
-            <div style="text-align: center;">
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase; margin-bottom: 5px;">🚩 Rohy</div>
-                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_rohy, 1)}</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase; margin-bottom: 5px;">⚖️ Fauly</div>
-                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_fauly, 1)}</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase; margin-bottom: 5px;">🟨 Karty</div>
-                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_karty, 1)}</div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # 2. DOLNÍ BOX (Rohy, Fauly, Karty)
+    st.markdown(f"""
+    <div style="{style_box} border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 10px;">
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🚩 Rohy</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_rohy, 1)}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">⚖️ Fauly</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_fauly, 1)}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🟨 Karty</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_karty, 1)}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     
     
     # Tipy
