@@ -180,6 +180,8 @@ elif volba == "Simulátor zápasů":
     # --- VÝPOČTY ---
     mu_d = (s1["G_v"] + s2["G_i"]) / 2
     mu_h = (s2["G_v"] + s1["G_i"]) / 2
+    celkem_goly = mu_d + mu_h
+
     
     # Poisson 1-X-2
     p_d, p_h, p_r = 0, 0, 0
@@ -271,15 +273,15 @@ elif volba == "Simulátor zápasů":
     st.markdown(obsah_formy, unsafe_allow_html=True)
     st.write("---")
     
-    # --- 7. AUTOMATICKÉ TIPY NA SÁZKU ---
+        # --- 7. AUTOMATICKÉ TIPY NA SÁZKU ---
     st.subheader("💡 Doporučené tipy")
     
     tipy = []
 
-    # Logika pro Góly (Over/Under)
+    # Logika pro Góly (využívá novou proměnnou celkem_goly)
     if celkem_goly > 3.0:
         tipy.append("🔥 **Tip na góly:** Over 2.5 (Očekává se ofenzivní zápas)")
-    elif celkem_goly < 2.0:
+    elif celkem_goly < 2.1:
         tipy.append("🛡️ **Tip na góly:** Under 2.5 (Očekává se defenzivní bitva)")
 
     # Logika pro Rohy
@@ -298,10 +300,9 @@ elif volba == "Simulátor zápasů":
     if mu_d > 1.1 and mu_h > 1.1:
         tipy.append("⚽ **Oba dají gól:** ANO (Vysoká pravděpodobnost na obou stranách)")
 
-    # Zobrazení tipů v boxech
+    # Zobrazení tipů
     if tipy:
         for t in tipy:
             st.info(t)
     else:
         st.write("Pro tento zápas nejsou k dispozici žádné výrazné statistické trendy.")
-    
