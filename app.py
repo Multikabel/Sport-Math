@@ -133,7 +133,7 @@ elif volba == "Rozhodčí":
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
-    st.header("Analýza a predikce střetnutí")
+    st.subheader("Analýza a predikce střetnutí")
     
     # Session state pro výběr týmů
     if 't1_pick' not in st.session_state: st.session_state.t1_pick = týmy_seznam[0]
