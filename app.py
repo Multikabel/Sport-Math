@@ -129,6 +129,7 @@ elif volba == "Rozhodčí":
     st.dataframe(pd.DataFrame(ref_stats).sort_values("ŽK/Z", ascending=False), use_container_width=True)
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
+# --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
     if 't1_pick' not in st.session_state: st.session_state.t1_pick = týmy_seznam[0]
@@ -143,11 +144,34 @@ elif volba == "Simulátor zápasů":
             st.radio("Vyber hosty:", týmy_seznam, key="t2_pick")
     
     t1, t2 = st.session_state.t1_pick, st.session_state.t2_pick
-    ref_list = sorted(df_hist['Referee'].unique())
-    if 'ref_pick' not in st.session_state: st.session_state.ref_pick = ref_list[0]
-    with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_pick}", use_container_width=True):
-        st.radio("Vyber rozhodčího:", ref_list, key="ref_pick")
-    vybrany_ref = st.session_state.ref_pick
+
+    # --- ÚPRAVA ROZHODČÍCH: Příjmení Jméno ---
+    if 'Referee' in df_hist.columns:
+        original_refs = df_hist['Referee'].unique()
+        # Vytvoříme mapování: {"Taylor Anthony": "Anthony Taylor"}
+        ref_mapping = {}
+        for r in original_refs:
+            if isinstance(r, str) and " " in r:
+                parts = r.split(" ")
+                formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
+                ref_mapping[formatted] = r
+            else:
+                ref_mapping[r] = r
+        
+        ref_display_list = sorted(ref_mapping.keys())
+    else:
+        ref_display_list = []
+        ref_mapping = {}
+
+    if 'ref_display_pick' not in st.session_state and ref_display_list: 
+        st.session_state.ref_display_pick = ref_display_list[0]
+    
+    with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_display_pick}", use_container_width=True):
+        st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
+    
+    # Do proměnné 'vybrany_ref' pro výpočty se uloží původní jméno (Jméno Příjmení)
+    vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick, "")
+    
 
     # VÝPOČET FAULŮ NA ZÁKLADĚ SÍLY TÝMŮ
     sila_t1 = urci_silu(t1)
