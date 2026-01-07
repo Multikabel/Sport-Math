@@ -69,20 +69,60 @@ if df_hist is None:
     st.error("Nepodařilo se načíst data.")
     st.stop()
 
+
 # --- 3. SEKCE: TABULKA ---
 if volba == "Tabulka PL":
     st.header("Aktuální pořadí Premier League 25/26")
     týmy = sorted(df_hist['HomeTeam'].unique())
     tabulka_data = []
+    
     for t in týmy:
         d, v = df_hist[df_hist['HomeTeam'] == t], df_hist[df_hist['AwayTeam'] == t]
         b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
         sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
-        tabulka_data.append({"Tým": t, "Z": len(d)+len(v), "Skóre": f"{int(sv)}:{int(so)}", "GD": sv-so, "B": b, "Forma": ziskej_formu(t, df_hist)})
+        tabulka_data.append({
+            "Tým": t, 
+            "Z": len(d)+len(v), 
+            "Skóre": f"{int(sv)}:{int(so)}", 
+            "GD": sv-so, 
+            "B": b, 
+            "Forma": ziskej_formu(t, df_hist)
+        })
+    
     df_res = pd.DataFrame(tabulka_data).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
     df_res.index += 1
     df_res.insert(0, ' ', df_res['Tým'].map(LOGA_TYMU))
-    st.dataframe(df_res, column_config={" ": st.column_config.ImageColumn(" ")}, use_container_width=True, hide_index=True)
+
+    # Definice barevného zvýraznění
+    def styluj_tabulku(x):
+        # Vytvoříme prázdný DataFrame pro styly
+        c1 = 'background-color: rgba(30, 144, 255, 0.1)' # Liga mistrů (modrá)
+        c2 = 'background-color: rgba(255, 69, 0, 0.1)'   # Sestup (červená)
+        df1 = pd.DataFrame('', index=x.index, columns=x.columns)
+        
+        # Prvních 4 místa (index 0 až 3 v resetované tabulce)
+        df1.iloc[0:4, :] = c1
+        # Poslední 3 místa
+        df1.iloc[-3:, :] = c2
+        return df1
+
+    # Zobrazení tabulky se styly
+    # POZOR: .style nefunguje přímo s ImageColumn v st.dataframe u všech verzí, 
+    # proto je lepší použít st.table nebo styl aplikovat opatrně
+    st.dataframe(
+        df_res.style.apply(styluj_tabulku, axis=None), 
+        column_config={" ": st.column_config.ImageColumn(" ")}, 
+        use_container_width=True, 
+        hide_index=False # Index ponecháme, aby bylo vidět pořadí 1-20
+    )
+
+    st.markdown("""
+    <div style="font-size: 0.8rem; display: flex; gap: 15px; margin-top: 10px;">
+        <div><span style="color: #1e90ff;">■</span> Liga mistrů</div>
+        <div><span style="color: #ff4500;">■</span> Sestupová zóna</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
 
 # --- 4. SEKCE: TÝMOVÉ STATISTIKY ---
 elif volba == "Týmové statistiky":
