@@ -234,37 +234,40 @@ elif volba == "Simulátor zápasů":
     if celkem_rohy > 10.5: st.info(f"📈 **Aktivní křídla!** ({round(celkem_rohy, 1)} rohů)")
     if ocek_fauly > 25: st.warning(f"⚠️ **Kouskovaná hra!** ({round(ocek_fauly, 1)} faulů)")
 
-         # --- SROVNÁVACÍ TABULKA A FORMA (VĚTŠÍ LOGA + CENTROVANÁ FORMA) ---
+         # --- SROVNÁVACÍ TABULKA A FORMA ---
     st.subheader("📊 Srovnání a Forma")
     
-    obsah_formy = f"""
+    f1 = ziskej_formu(t1, df_hist)
+    f2 = ziskej_formu(t2, df_hist)
+    
+    # HTML kód bez složitých f-stringů uvnitř, vše připraveno předem
+    obsah_formy = """
     <div style="width: 100%; font-family: sans-serif; margin-bottom: 15px; border: 1px solid #f0f2f6; padding: 12px 5px; border-radius: 10px; background-color: #fafafa;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div style="width: 20%; text-align: left;">
-                <img src="{logo1}" width="45">
+                <img src="{l1}" width="45">
             </div>
             <div style="width: 60%; text-align: center; font-weight: bold; font-size: 1.1rem; color: #31333F;">
-                {t1} — {t2}
+                {n1} — {n2}
             </div>
             <div style="width: 20%; text-align: right;">
-                <img src="{logo2}" width="45">
+                <img src="{l2}" width="45">
             </div>
         </div>
-        
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 10px;">
-            <div style="width: 30%; text-align: right; font-size: 1.1rem; letter-spacing: 1px;">
-                {ziskej_formu(t1, df_hist)}
+            <div style="width: 35%; text-align: right; font-size: 1.2rem; letter-spacing: 2px;">
+                {forma1}
             </div>
-            <div style="width: 20%; text-align: center; color: #bbb; font-size: 0.7rem; font-weight: bold;">
+            <div style="width: 15%; text-align: center; color: #bbb; font-size: 0.7rem; font-weight: bold;">
                 VS
             </div>
-            <div style="width: 30%; text-align: left; font-size: 1.1rem; letter-spacing: 1px;">
-                {ziskej_formu(t2, df_hist)}
+            <div style="width: 35%; text-align: left; font-size: 1.2rem; letter-spacing: 2px;">
+                {forma2}
             </div>
         </div>
     </div>
-    """
+    """.format(l1=logo1, l2=logo2, n1=t1, n2=t2, forma1=f1, forma2=f2)
     
     st.markdown(obsah_formy, unsafe_allow_html=True)
     st.write("---")
-     
+    
