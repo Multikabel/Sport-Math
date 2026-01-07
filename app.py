@@ -202,6 +202,22 @@ elif volba == "Simulátor zápasů":
     ref_zk_avg = ref_data[['HY', 'AY']].sum().sum() / len(ref_data) if not ref_data.empty else 3.5
     ocek_karty = ((df_hist[df_hist['HomeTeam']==t1]['HY'].mean() + df_hist[df_hist['AwayTeam']==t2]['AY'].mean()) + ref_zk_avg) / 2
 
+    # --- VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
+    p_1, p_x, p_2 = 0, 0, 0
+    for i in range(10): # simulujeme skóre 0-9 gólů
+        for j in range(10):
+            p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
+            if i > j: p_1 += p
+            elif i < j: p_2 += p
+            else: p_x += p
+    
+    # Příprava procent pro pruh
+    p1_pct = round(p_1 * 100)
+    px_pct = round(p_x * 100)
+    p2_pct = 100 - p1_pct - px_pct
+    
+
+    
     # --- VIZUALIZACE ---
     st.markdown(f"""<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
         <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t1)}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span></div>
@@ -273,10 +289,7 @@ elif volba == "Simulátor zápasů":
     
 
     # 3. VÝPOČET PROCENT A VIZUÁLNÍ PRUH (1-X-2)
-    # p_1, p_x, p_2 už máš vypočtené z části pro Value Bets
-    p1_pct = round(p_1 * 100)
-    px_pct = round(p_x * 100)
-    p2_pct = 100 - p1_pct - px_pct # Aby to dalo přesně 100
+    
 
     st.markdown(f"""
     <div style="margin-top: -5px; margin-bottom: 25px;">
