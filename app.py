@@ -271,6 +271,28 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
     
+
+    # 3. VÝPOČET PROCENT A VIZUÁLNÍ PRUH (1-X-2)
+    # p_1, p_x, p_2 už máš vypočtené z části pro Value Bets
+    p1_pct = round(p_1 * 100)
+    px_pct = round(p_x * 100)
+    p2_pct = 100 - p1_pct - px_pct # Aby to dalo přesně 100
+
+    st.markdown(f"""
+    <div style="margin-top: -5px; margin-bottom: 25px;">
+        <div style="display: flex; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444;">
+            <div style="width: {p1_pct}%; background-color: #4dabf7;" title="Výhra domácích"></div>
+            <div style="width: {px_pct}%; background-color: #666;" title="Remíza"></div>
+            <div style="width: {p2_pct}%; background-color: #ff6b6b;" title="Výhra hostů"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; padding-top: 5px; font-weight: bold;">
+            <span>{t1}: {p1_pct}%</span>
+            <span>REMÍZA: {px_pct}%</span>
+            <span>{t2}: {p2_pct}%</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     
     
     # Tipy
