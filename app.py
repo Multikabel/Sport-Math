@@ -271,3 +271,37 @@ elif volba == "Simulátor zápasů":
     st.markdown(obsah_formy, unsafe_allow_html=True)
     st.write("---")
     
+    # --- 7. AUTOMATICKÉ TIPY NA SÁZKU ---
+    st.subheader("💡 Doporučené tipy")
+    
+    tipy = []
+
+    # Logika pro Góly (Over/Under)
+    if celkem_goly > 3.0:
+        tipy.append("🔥 **Tip na góly:** Over 2.5 (Očekává se ofenzivní zápas)")
+    elif celkem_goly < 2.0:
+        tipy.append("🛡️ **Tip na góly:** Under 2.5 (Očekává se defenzivní bitva)")
+
+    # Logika pro Rohy
+    if celkem_rohy > 11.0:
+        tipy.append("🚩 **Tip na rohy:** Over 10.5 (Týmy hrají hodně přes křídla)")
+    elif celkem_rohy < 8.5:
+        tipy.append("🚩 **Tip na rohy:** Under 9.5 (Hra se drží spíše ve středu pole)")
+
+    # Logika pro Karty
+    if ocek_karty > 4.5:
+        tipy.append("🟨 **Tip na karty:** Over 3.5 (Přísný rozhodčí nebo agresivní týmy)")
+    elif ocek_karty < 2.5:
+        tipy.append("🕊️ **Tip na karty:** Under 3.5 (Klidný zápas bez velkých faulů)")
+
+    # Logika pro BTTS (Both Teams To Score)
+    if mu_d > 1.1 and mu_h > 1.1:
+        tipy.append("⚽ **Oba dají gól:** ANO (Vysoká pravděpodobnost na obou stranách)")
+
+    # Zobrazení tipů v boxech
+    if tipy:
+        for t in tipy:
+            st.info(t)
+    else:
+        st.write("Pro tento zápas nejsou k dispozici žádné výrazné statistické trendy.")
+    
