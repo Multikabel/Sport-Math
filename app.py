@@ -226,16 +226,49 @@ elif volba == "Simulátor zápasů":
     """
     st.markdown(forma_html, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
+        # --- VIZUALIZACE VÝSLEDKŮ (KOMPAKTNÍ ŘÁDEK 1) ---
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-around; align-items: center; background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <div style="text-align: center;">
+            <div style="font-size: 0.8rem; color: #555;">xG {t1}</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: #1e90ff;">{round(mu_d, 2)}</div>
+        </div>
+        <div style="text-align: center; border-left: 1px solid #ccc; border-right: 1px solid #ccc; padding: 0 30px;">
+            <div style="font-size: 0.8rem; color: #555;">PREDIKCE SKÓRE</div>
+            <div style="font-size: 1.8rem; font-weight: bold; color: #333;">{round(mu_d)} : {round(mu_h)}</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 0.8rem; color: #555;">xG {t2}</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: #ff4b4b;">{round(mu_h, 2)}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     c1.metric(f"xG {t1}", round(mu_d, 2))
     c2.metric("Předpokládané skóre", f"{round(mu_d)} : {round(mu_h)}")
     c3.metric(f"xG {t2}", round(mu_h, 2))
 
     st.write("---")
-    r1, r2, r3 = st.columns(3)
-    r1.metric("Očekávané rohy", round(ocek_rohy, 1))
-    r2.metric("Očekávané fauly", round(ocek_fauly, 1))
-    r3.metric("Očekávané ŽK", round(ocek_karty, 1))
+        # --- VIZUALIZACE METRIK (KOMPAKTNÍ ŘÁDEK 2) ---
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 20px;">
+        <div style="text-align: center;">
+            <span style="font-size: 1.2rem;">🚩</span>
+            <span style="font-size: 0.85rem; color: #666; font-weight: bold;"> ROHY:</span>
+            <span style="font-size: 1.1rem; font-weight: bold; margin-left: 5px;">{round(ocek_rohy, 1)}</span>
+        </div>
+        <div style="text-align: center;">
+            <span style="font-size: 1.2rem;">⚖️</span>
+            <span style="font-size: 0.85rem; color: #666; font-weight: bold;"> FAULY:</span>
+            <span style="font-size: 1.1rem; font-weight: bold; margin-left: 5px;">{round(ocek_fauly, 1)}</span>
+        </div>
+        <div style="text-align: center;">
+            <span style="font-size: 1.2rem;">🟨</span>
+            <span style="font-size: 0.85rem; color: #666; font-weight: bold;"> KARTY:</span>
+            <span style="font-size: 1.1rem; font-weight: bold; margin-left: 5px;">{round(ocek_karty, 1)}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     
     # Tipy
