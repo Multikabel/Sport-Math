@@ -203,11 +203,28 @@ elif volba == "Simulátor zápasů":
     ocek_karty = ((df_hist[df_hist['HomeTeam']==t1]['HY'].mean() + df_hist[df_hist['AwayTeam']==t2]['AY'].mean()) + ref_zk_avg) / 2
 
     # --- VIZUALIZACE ---
-    st.markdown(f"""<div style="display:flex; justify-content:space-between; align-items:center; padding:20px;">
-        <div style="text-align:center;"><img src="{LOGA_TYMU.get(t1)}" width="100"><br><b>{t1}</b> (Sila {sila_t1})</div>
-        <div style="font-size:3rem;">VS</div>
-        <div style="text-align:center;"><img src="{LOGA_TYMU.get(t2)}" width="100"><br><b>{t2}</b> (Sila {sila_t2})</div>
+    st.markdown(f"""<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t1)}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span></div>
+        <div style="text-align: center; width: 40%;"><h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1></div>
+        <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t2)}" width="100"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2.upper()}</span></div>
     </div>""", unsafe_allow_html=True)
+
+    # --- 2. FORMA (PŘESUNUTO SEM A ZMENŠENO) ---
+    # Zmenšujeme nadpis pomocí <h6> nebo vlastního spanu a puntíky přes font-size
+    f1 = ziskej_formu(t1, df_hist)[::-1]
+    f2 = ziskej_formu(t2, df_hist)[::-1]
+    
+    forma_html = f"""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 0.85rem; font-weight: bold; color: #666; margin-bottom: 5px;">AKTUÁLNÍ FORMA</div>
+        <div style="display: flex; justify-content: center; gap: 30px; font-size: 1.1rem; letter-spacing: 2px;">
+            <div>{f1}</div>
+            <div style="color: #ccc; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center;">VS</div>
+            <div>{f2}</div>
+        </div>
+    </div>
+    """
+    st.markdown(forma_html, unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
     c1.metric(f"xG {t1}", round(mu_d, 2))
@@ -220,14 +237,7 @@ elif volba == "Simulátor zápasů":
     r2.metric("Očekávané fauly", round(ocek_fauly, 1))
     r3.metric("Očekávané ŽK", round(ocek_karty, 1))
 
-    # Forma
-    st.subheader("📊 Aktuální forma (poslední zápas vlevo)")
-    f_html = f"""<div style="display:flex; justify-content:center; gap:50px; font-size:1.5rem;">
-        <div>{ziskej_formu(t1, df_hist)[::-1]}</div>
-        <div>{ziskej_formu(t2, df_hist)[::-1]}</div>
-    </div>"""
-    st.markdown(f_html, unsafe_allow_html=True)
-
+    
     # Tipy
     st.subheader("💡 Doporučené tipy")
     tipy = []
