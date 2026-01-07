@@ -254,13 +254,13 @@ elif volba == "Simulátor zápasů":
             </div>
         </div>
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 10px;">
-            <div style="width: 38%; text-align: right; font-size: 1.0rem;">
+            <div style="width: 43%; text-align: right; font-size: 1.0rem;">
                 {forma1}
             </div>
-            <div style="width: 24%; text-align: center; color: #bbb; font-size: 0.65rem; font-weight: bold;">
+            <div style="width: 14%; text-align: center; color: #ccc; font-size: 0.6rem; font-weight: bold;">
                 VS
             </div>
-            <div style="width: 38%; text-align: left; font-size: 1.0rem;">
+            <div style="width: 43%; text-align: left; font-size: 1.0rem;">
                 {forma2}
             </div>
         </div>
