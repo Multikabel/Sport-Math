@@ -244,9 +244,7 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
     
-    c1.metric(f"xG {t1}", round(mu_d, 2))
-    c2.metric("Předpokládané skóre", f"{round(mu_d)} : {round(mu_h)}")
-    c3.metric(f"xG {t2}", round(mu_h, 2))
+    
 
     st.write("---")
         # --- VIZUALIZACE METRIK (KOMPAKTNÍ ŘÁDEK 2) ---
