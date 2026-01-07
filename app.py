@@ -78,7 +78,7 @@ volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Rozhod
 
 # --- 3. SEKCE: TABULKA PL ---
 if volba == "Tabulka PL":
-    st.header("Aktuální pořadí Premier League 25/26")
+    st.subheader("Aktuální pořadí Premier League 25/26")
     tabulka_final = []
     for t in týmy_seznam:
         d, v = df_hist[df_hist['HomeTeam'] == t], df_hist[df_hist['AwayTeam'] == t]
