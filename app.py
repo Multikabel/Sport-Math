@@ -99,7 +99,24 @@ if volba == "Tabulka PL":
 
 # --- 4. TÝMOVÉ STATISTIKY (Zkráceno pro přehlednost) ---
 elif volba == "Týmové statistiky":
-    st.info("Zde zůstává váš původní kód pro Altair grafy...")
+    metrika = st.radio("Metrika:", ["Žluté karty", "Fauly", "Rohy"], horizontal=True)
+    m = {"Žluté karty": ("HY", "AY"), "Fauly": ("HF", "AF"), "Rohy": ("HC", "AC")}[metrika]
+    plot_data = []
+    for t in sorted(df_hist['HomeTeam'].unique()):
+        mask_h, mask_a = df_hist['HomeTeam']==t, df_hist['AwayTeam']==t
+        z = len(df_hist[mask_h | mask_a])
+        ud = (df_hist[mask_h][m[0]].sum() + df_hist[mask_a][m[1]].sum()) / z
+        ob = (df_hist[mask_h][m[1]].sum() + df_hist[mask_a][m[0]].sum()) / z
+        plot_data.append({"Tým": t, "Typ": "Udělané", "Hodnota": round(ud, 1)})
+        plot_data.append({"Tým": t, "Typ": "Obdržené", "Hodnota": round(ob, 1)})
+    df_p = pd.DataFrame(plot_data)
+    sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
+    base = alt.Chart(df_p).encode(y=alt.Y('Tým:N', sort=sort_order, title=None), x=alt.X('Hodnota:Q', stack='normalize', axis=None), color=alt.Color('Typ:N', scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), legend=alt.Legend(orient="top", title=None)))
+    bars = base.mark_bar()
+    txt_ud = alt.Chart(df_p[df_p['Typ'] == 'Udělané']).mark_text(align='left', dx=10, color='white', fontWeight='bold').encode(y=alt.Y('Tým:N', sort=sort_order), x=alt.value(0), text='Hodnota:Q')
+    txt_ob = alt.Chart(df_p[df_p['Typ'] == 'Obdržené']).mark_text(align='right', dx=-10, color='white', fontWeight='bold').encode(y=alt.Y('Tým:N', sort=sort_order), x=alt.X('sum(Hodnota):Q', stack='normalize'), text='Hodnota:Q')
+    st.altair_chart((bars + txt_ud + txt_ob).properties(height=700), use_container_width=True)
+
 
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
