@@ -51,7 +51,7 @@ if df_hist is None:
     st.error("Nepodařilo se načíst data.")
     st.stop()
 
-# --- GLOBÁLNÍ VÝPOČET TABULKY (Potřebujeme pro určení síly týmů) ---
+# --- GLOBÁLNÍ VÝPOČET TABULKY (Potřebujeme pro určení síly týmů v celém skriptu) ---
 týmy_seznam = sorted(df_hist['HomeTeam'].unique())
 tabulka_vypocet = []
 for t in týmy_seznam:
@@ -59,11 +59,13 @@ for t in týmy_seznam:
     b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
     sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
     tabulka_vypocet.append({"Tým": t, "B": b, "GD": sv-so})
+
 df_top = pd.DataFrame(tabulka_vypocet).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
 df_top.index += 1
 
 def urci_silu(tym):
     try:
+        # Hledáme pozici v aktuální tabulce
         pozice = df_top[df_top['Tým'] == tym].index[0]
         if pozice <= 6: return 'A'
         elif pozice >= 15: return 'C'
@@ -77,15 +79,15 @@ volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Rozhod
 # --- 3. SEKCE: TABULKA PL ---
 if volba == "Tabulka PL":
     st.header("Aktuální pořadí Premier League 25/26")
-    tabulka_data = []
+    tabulka_final = []
     for t in týmy_seznam:
         d, v = df_hist[df_hist['HomeTeam'] == t], df_hist[df_hist['AwayTeam'] == t]
         b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
         sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
         forma_str = ziskej_formu(t, df_hist)[::-1]
-        tabulka_data.append({"Tým": t, "Z": len(d)+len(v), "Skóre": f"{int(sv)}:{int(so)}", "GD": sv-so, "B": b, "Forma": forma_str})
+        tabulka_final.append({"Tým": t, "Z": len(d)+len(v), "Skóre": f"{int(sv)}:{int(so)}", "GD": sv-so, "B": b, "Forma": forma_str})
     
-    df_res = pd.DataFrame(tabulka_data).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
+    df_res = pd.DataFrame(tabulka_final).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
     df_res.index += 1
     df_res.insert(0, ' ', df_res['Tým'].map(LOGA_TYMU))
 
@@ -97,12 +99,12 @@ if volba == "Tabulka PL":
 
     st.dataframe(df_res.style.apply(styluj_tabulku, axis=None), column_config={" ": st.column_config.ImageColumn(" ")}, use_container_width=True)
 
-# --- 4. TÝMOVÉ STATISTIKY (Zkráceno pro přehlednost) ---
+# --- 4. TÝMOVÉ STATISTIKY ---
 elif volba == "Týmové statistiky":
     metrika = st.radio("Metrika:", ["Žluté karty", "Fauly", "Rohy"], horizontal=True)
     m = {"Žluté karty": ("HY", "AY"), "Fauly": ("HF", "AF"), "Rohy": ("HC", "AC")}[metrika]
     plot_data = []
-    for t in sorted(df_hist['HomeTeam'].unique()):
+    for t in týmy_seznam:
         mask_h, mask_a = df_hist['HomeTeam']==t, df_hist['AwayTeam']==t
         z = len(df_hist[mask_h | mask_a])
         ud = (df_hist[mask_h][m[0]].sum() + df_hist[mask_a][m[1]].sum()) / z
@@ -111,12 +113,12 @@ elif volba == "Týmové statistiky":
         plot_data.append({"Tým": t, "Typ": "Obdržené", "Hodnota": round(ob, 1)})
     df_p = pd.DataFrame(plot_data)
     sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
-    base = alt.Chart(df_p).encode(y=alt.Y('Tým:N', sort=sort_order, title=None), x=alt.X('Hodnota:Q', stack='normalize', axis=None), color=alt.Color('Typ:N', scale=alt.Scale(domain=['Udělané', 'Obdržené'], range=['#2ca02c', '#d62728']), legend=alt.Legend(orient="top", title=None)))
-    bars = base.mark_bar()
-    txt_ud = alt.Chart(df_p[df_p['Typ'] == 'Udělané']).mark_text(align='left', dx=10, color='white', fontWeight='bold').encode(y=alt.Y('Tým:N', sort=sort_order), x=alt.value(0), text='Hodnota:Q')
-    txt_ob = alt.Chart(df_p[df_p['Typ'] == 'Obdržené']).mark_text(align='right', dx=-10, color='white', fontWeight='bold').encode(y=alt.Y('Tým:N', sort=sort_order), x=alt.X('sum(Hodnota):Q', stack='normalize'), text='Hodnota:Q')
-    st.altair_chart((bars + txt_ud + txt_ob).properties(height=700), use_container_width=True)
-
+    chart = alt.Chart(df_p).mark_bar().encode(
+        y=alt.Y('Tým:N', sort=sort_order),
+        x=alt.X('Hodnota:Q'),
+        color=alt.Color('Typ:N', scale=alt.Scale(range=['#2ca02c', '#d62728']))
+    ).properties(height=700)
+    st.altair_chart(chart, use_container_width=True)
 
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
@@ -124,115 +126,114 @@ elif volba == "Rozhodčí":
     ref_stats = []
     for r in df_hist['Referee'].unique():
         zref = df_hist[df_hist['Referee'] == r]
-        zk, ck, f = (zref['HY'].sum()+zref['AY'].sum()), (zref['HR'].sum()+zref['AR'].sum()), (zref['HF'].sum()+zref['AF'].sum())
-        ref_stats.append({"Rozhodčí": r, "Zápasy": len(zref), "Fauly/Z": round(f/len(zref),1), "ŽK/Z": round(zk/len(zref),2), "ČK celkem": int(ck)})
+        zk = zref['HY'].sum() + zref['AY'].sum()
+        f = zref['HF'].sum() + zref['AF'].sum()
+        ref_stats.append({"Rozhodčí": r, "Zápasy": len(zref), "Fauly/Z": round(f/len(zref),1), "ŽK/Z": round(zk/len(zref),2)})
     st.dataframe(pd.DataFrame(ref_stats).sort_values("ŽK/Z", ascending=False), use_container_width=True)
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
-# --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
     st.header("Analýza a predikce střetnutí")
+    
+    # Session state pro výběr týmů
     if 't1_pick' not in st.session_state: st.session_state.t1_pick = týmy_seznam[0]
     if 't2_pick' not in st.session_state: st.session_state.t2_pick = týmy_seznam[1]
     
-    c_btn1, c_btn2 = st.columns(2)
-    with c_btn1:
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
         with st.popover(f"🏠 Domácí: {st.session_state.t1_pick}", use_container_width=True):
             st.radio("Vyber domácí:", týmy_seznam, key="t1_pick")
-    with c_btn2:
+    with col_t2:
         with st.popover(f"🚀 Hosté: {st.session_state.t2_pick}", use_container_width=True):
             st.radio("Vyber hosty:", týmy_seznam, key="t2_pick")
     
     t1, t2 = st.session_state.t1_pick, st.session_state.t2_pick
 
-    # --- ÚPRAVA ROZHODČÍCH: Příjmení Jméno ---
-    if 'Referee' in df_hist.columns:
-        original_refs = df_hist['Referee'].unique()
-        # Vytvoříme mapování: {"Taylor Anthony": "Anthony Taylor"}
-        ref_mapping = {}
-        for r in original_refs:
-            if isinstance(r, str) and " " in r:
-                parts = r.split(" ")
-                formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
-                ref_mapping[formatted] = r
-            else:
-                ref_mapping[r] = r
-        
-        ref_display_list = sorted(ref_mapping.keys())
-    else:
-        ref_display_list = []
-        ref_mapping = {}
-
-    if 'ref_display_pick' not in st.session_state and ref_display_list: 
-        st.session_state.ref_display_pick = ref_display_list[0]
+    # Úprava rozhodčích (Příjmení Jméno)
+    original_refs = df_hist['Referee'].unique()
+    ref_mapping = {}
+    for r in original_refs:
+        if isinstance(r, str) and " " in r:
+            parts = r.split(" ")
+            formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
+            ref_mapping[formatted] = r
+        else: ref_mapping[r] = r
+    
+    ref_display_list = sorted(ref_mapping.keys())
+    if 'ref_display_pick' not in st.session_state: st.session_state.ref_display_pick = ref_display_list[0]
     
     with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_display_pick}", use_container_width=True):
         st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
     
-    # Do proměnné 'vybrany_ref' pro výpočty se uloží původní jméno (Jméno Příjmení)
-    vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick, "")
-    
+    vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick)
 
-    # VÝPOČET FAULŮ NA ZÁKLADĚ SÍLY TÝMŮ
-    sila_t1 = urci_silu(t1)
-    sila_t2 = urci_silu(t2)
+    # --- POKROČILÉ VÝPOČTY DLE SÍLY SOUPEŘE ---
+    sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
 
-    def ziskej_ocekavane_fauly_pokrocile(tym, role, sila_soupere):
+    def ziskej_stats_sila(tym, role, sila_soupere, sloupec):
         if role == 'Home':
-            zápasy = df_hist[df_hist['HomeTeam'] == tym].copy()
-            zápasy['Sila_Soupere'] = zápasy['AwayTeam'].apply(urci_silu)
-            fauly = zápasy[zápasy['Sila_Soupere'] == sila_soupere]['HF']
+            z = df_hist[df_hist['HomeTeam'] == tym].copy()
+            z['Sila_Soupere'] = z['AwayTeam'].apply(urci_silu)
         else:
-            zápasy = df_hist[df_hist['AwayTeam'] == tym].copy()
-            zápasy['Sila_Soupere'] = zápasy['HomeTeam'].apply(urci_silu)
-            fauly = zápasy[zápasy['Sila_Soupere'] == sila_soupere]['AF']
-        return fauly.mean() if not fauly.empty else df_hist[df_hist[role+'Team'] == tym][role[0]+'F'].mean()
+            z = df_hist[df_hist['AwayTeam'] == tym].copy()
+            z['Sila_Soupere'] = z['HomeTeam'].apply(urci_silu)
+        
+        res = z[z['Sila_Soupere'] == sila_soupere][sloupec]
+        return res.mean() if not res.empty else df_hist[df_hist[role+'Team'] == tym][sloupec].mean()
 
-    # Faktor rozhodčího
-    ligovy_avg_f = (df_hist['HF'].mean() + df_hist['AF'].mean())
-    ref_avg_f = df_hist[df_hist['Referee'] == vybrany_ref][['HF', 'AF']].sum(axis=1).mean()
-    ref_faktor = ref_avg_f / ligovy_avg_f if ligovy_avg_f > 0 else 1.0
-
-    f_domaci = ziskej_ocekavane_fauly_pokrocile(t1, 'Home', sila_t2)
-    f_hoste = ziskej_ocekavane_fauly_pokrocile(t2, 'Away', sila_t1)
-    ocek_fauly = (f_domaci + f_hoste) * ref_faktor
-
-    # --- ZBYTEK PŮVODNÍCH VÝPOČTŮ (Góly, Rohy, Karty) ---
-    def get_stats(team):
-        d, v = df_hist[df_hist['HomeTeam'] == team], df_hist[df_hist['AwayTeam'] == team]
-        z = len(d) + len(v)
-        return {"G_v": (d['FTHG'].sum()+v['FTAG'].sum())/z, "G_i": (d['FTAG'].sum()+v['FTHG'].sum())/z, 
-                "R": (d['HC'].sum()+v['AC'].sum())/z, "K": (d['HY'].sum()+v['AY'].sum())/z}
-
-    st1, st2 = get_stats(t1), get_stats(t2)
-    mu_d, mu_h = (st1["G_v"] + st2["G_i"])/2, (st2["G_v"] + st1["G_i"])/2
+    # 1. Góly (Poisson lambda)
+    mu_d = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') + ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
+    mu_h = (ziskej_stats_sila(t2, 'Away', sila_t1, 'FTAG') + ziskej_stats_sila(t1, 'Home', sila_t2, 'FTAG')) / 2
     celkem_goly = mu_d + mu_h
-    ocek_rohy = (st1["R"] + st2["R"])
-    ref_zk_avg = (df_hist[df_hist['Referee'] == vybrany_ref]['HY'].sum() + df_hist[df_hist['Referee'] == vybrany_ref]['AY'].sum()) / len(df_hist[df_hist['Referee'] == vybrany_ref])
-    ocek_karty = (st1["K"] + st2["K"] + ref_zk_avg) / 1.5
 
-    # Zobrazení log
-    st.markdown(f"""<div style="display: flex; justify-content: space-between; align-items: center;"><div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t1)}" width="80"></div><div style="text-align: center; width: 40%;"><h1>VS</h1></div><div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t2)}" width="80"></div></div>""", unsafe_allow_html=True)
+    # 2. Rohy
+    ocek_rohy = ziskej_stats_sila(t1, 'Home', sila_t2, 'HC') + ziskej_stats_sila(t2, 'Away', sila_t1, 'AC')
 
-    # Vizuální metriky
-    c1, c2, c3 = st.columns(3)
-    c1.metric(f"Góly {t1}", round(mu_d, 2))
-    c2.metric("Očekávané skóre", f"{round(mu_d)} : {round(mu_h)}")
-    c3.metric(f"Góly {t2}", round(mu_h, 2))
+    # 3. Fauly a Rozhodčí
+    ligovy_avg_f = (df_hist['HF'].mean() + df_hist['AF'].mean())
+    ref_data = df_hist[df_hist['Referee'] == vybrany_ref]
+    ref_avg_f = ref_data[['HF', 'AF']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_f
+    ref_faktor = ref_avg_f / ligovy_avg_f if ligovy_avg_f > 0 else 1.0
     
-    st.write("---")
-    f1, f2, f3 = st.columns(3)
-    f1.metric("Předpokládané ŽK", round(ocek_karty, 1))
-    f2.metric("CELKEM FAULY", round(ocek_fauly, 1))
-    f3.metric("Faktor rozhodčího", round(ref_faktor, 2))
+    f_base = (ziskej_stats_sila(t1, 'Home', sila_t2, 'HF') + ziskej_stats_sila(t2, 'Away', sila_t1, 'AF'))
+    ocek_fauly = f_base * ref_faktor
 
-    # Karta formy
-    st.subheader("📊 Srovnání a Forma")
-    forma_html = f"""<div style="display:flex; justify-content:center; align-items:center; gap:20px;"><div>{ziskej_formu(t1,df_hist)[::-1]}</div><div style="color:#ccc">VS</div><div>{ziskej_formu(t2,df_hist)[::-1]}</div></div>"""
-    st.markdown(forma_html, unsafe_allow_html=True)
+    # 4. Karty
+    ref_zk_avg = ref_data[['HY', 'AY']].sum().sum() / len(ref_data) if not ref_data.empty else 3.5
+    ocek_karty = ((df_hist[df_hist['HomeTeam']==t1]['HY'].mean() + df_hist[df_hist['AwayTeam']==t2]['AY'].mean()) + ref_zk_avg) / 2
+
+    # --- VIZUALIZACE ---
+    st.markdown(f"""<div style="display:flex; justify-content:space-between; align-items:center; padding:20px;">
+        <div style="text-align:center;"><img src="{LOGA_TYMU.get(t1)}" width="100"><br><b>{t1}</b> (Sila {sila_t1})</div>
+        <div style="font-size:3rem;">VS</div>
+        <div style="text-align:center;"><img src="{LOGA_TYMU.get(t2)}" width="100"><br><b>{t2}</b> (Sila {sila_t2})</div>
+    </div>""", unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric(f"xG {t1}", round(mu_d, 2))
+    c2.metric("Předpokládané skóre", f"{round(mu_d)} : {round(mu_h)}")
+    c3.metric(f"xG {t2}", round(mu_h, 2))
+
+    st.write("---")
+    r1, r2, r3 = st.columns(3)
+    r1.metric("Očekávané rohy", round(ocek_rohy, 1))
+    r2.metric("Očekávané fauly", round(ocek_fauly, 1))
+    r3.metric("Očekávané ŽK", round(ocek_karty, 1))
+
+    # Forma
+    st.subheader("📊 Aktuální forma (poslední zápas vlevo)")
+    f_html = f"""<div style="display:flex; justify-content:center; gap:50px; font-size:1.5rem;">
+        <div>{ziskej_formu(t1, df_hist)[::-1]}</div>
+        <div>{ziskej_formu(t2, df_hist)[::-1]}</div>
+    </div>"""
+    st.markdown(f_html, unsafe_allow_html=True)
 
     # Tipy
     st.subheader("💡 Doporučené tipy")
-    if ocek_fauly > 24.5: st.warning(f"⚠️ **Vysoká intenzita faulů!** Rozhodčí i herní styly proti síle {sila_t1}/{sila_t2} naznačují Over.")
-    if celkem_goly > 3.0: st.info("🔥 **Tip na góly:** Over 2.5")
-    if ocek_karty > 4.5: st.error("🟨 **Karty:** Over 3.5")
+    tipy = []
+    if celkem_goly > 3.0: tipy.append("🔥 **Góly:** Over 2.5")
+    if ocek_rohy > 11.0: tipy.append("🚩 **Rohy:** Over 10.5")
+    if ocek_fauly > 24: tipy.append(f"⚠️ **Fauly:** Over 23.5 (Ref faktor: {round(ref_faktor, 2)})")
+    if ocek_karty > 4.5: tipy.append("🟨 **Karty:** Over 3.5")
+    
+    for t in tipy: st.info(t)
