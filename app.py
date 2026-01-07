@@ -237,3 +237,48 @@ elif volba == "Simulátor zápasů":
     if ocek_karty > 4.5: tipy.append("🟨 **Karty:** Over 3.5")
     
     for t in tipy: st.info(t)
+
+
+
+    # --- NOVÁ ČÁST: VÝPOČET PRAVDĚPODOBNOSTÍ ---
+    # Výpočet pravděpodobnosti výhry 1-X-2
+    p_1, p_x, p_2 = 0, 0, 0
+    for i in range(10): # simulujeme skóre 0-9 gólů
+        for j in range(10):
+            p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
+            if i > j: p_1 += p
+            elif i < j: p_2 += p
+            else: p_x += p
+    
+    # Výpočet Over 2.5
+    prob_over_2_5 = sum(poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h) 
+                        for i in range(10) for j in range(10) if i + j > 2.5)
+
+    # --- SEKCE VALUE BETS ---
+    st.write("---")
+    st.subheader("💰 Vyhledávač Value Bets")
+    st.caption("Porovnej kurzy sázkové kanceláře s matematickým modelem")
+
+    c_odds1, c_odds2, c_odds3 = st.columns(3)
+    odd_1 = c_odds1.number_input(f"Kurz na {t1}", min_value=1.01, value=2.00, step=0.05)
+    odd_x = c_odds2.number_input("Kurz na Remízu", min_value=1.01, value=3.20, step=0.05)
+    odd_2 = c_odds3.number_input(f"Kurz na {t2}", min_value=1.01, value=3.50, step=0.05)
+    
+    odd_over = st.number_input("Kurz na Over 2.5 gólu", min_value=1.01, value=1.85, step=0.05)
+
+    if st.button("Analyzovat výhodnost kurzů", use_container_width=True):
+        def check_value(prob, odd, label):
+            value = (prob * odd) - 1
+            fair_kurz = 1/prob if prob > 0 else 0
+            if value > 0.05:
+                st.success(f"✅ **{label}**: Hodnota {round(value*100, 1)}% (Fair kurz: {round(fair_kurz, 2)})")
+            elif value < -0.15:
+                st.error(f"❌ **{label}**: Nevýhodné (Fair kurz: {round(fair_kurz, 2)})")
+            else:
+                st.warning(f"⚖️ **{label}**: Bez výrazné hodnoty (Fair kurz: {round(fair_kurz, 2)})")
+
+        check_value(p_1, odd_1, f"Výhra {t1}")
+        check_value(p_x, odd_x, "Remíza")
+        check_value(p_2, odd_2, f"Výhra {t2}")
+        check_value(prob_over_2_5, odd_over, "Over 2.5 gólu")
+
