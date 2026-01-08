@@ -202,28 +202,137 @@ elif volba == "Rozhodčí":
         </div>
         """, unsafe_allow_html=True)
 
-        # B) SLOUPCOVÝ GRAF HISTORIE (Odshora dolů od prvního zápasu)
-        # Aby byl graf "odshora dolů", použijeme Y osu pro Zápasy seřazené chronologicky
+# --- 5. ROZHODČÍ (UPRAVENÁ VERZE S POPOVEREM A ČÍSLY) ---
+elif volba == "Rozhodčí":
+    st.markdown("### Analýza rozhodčích PL 25/26")
+    
+    # 1. Příprava seznamu rozhodčích
+    original_refs = df_hist['Referee'].unique()
+    ref_mapping = {}
+    for r in original_refs:
+        if isinstance(r, str) and " " in r:
+            parts = r.split(" ")
+            formatted = f"{parts[-1]} {' '.join(parts[:-1])}" # Taylor Anthony
+            ref_mapping[formatted] = r
+        else: ref_mapping[r] = r
+    
+    # Seznam: CELKEM + seřazení rozhodčí
+    seznam_ref_display = ["CELKEM"] + sorted(ref_mapping.keys())
+    
+    # 2. UI Ovládání (POPOVER místo Selectboxu)
+    # Použijeme session_state, aby si to pamatovalo výběr při přepínání faulů/karet
+    if 'ref_section_pick' not in st.session_state:
+        st.session_state.ref_section_pick = "CELKEM"
+
+    c_nav1, c_nav2 = st.columns([1, 1])
+    
+    with c_nav1:
+        with st.popover(f"👮 Vyber rozhodčího: {st.session_state.ref_section_pick}", use_container_width=True):
+            st.radio("Seznam:", seznam_ref_display, key="ref_section_pick")
+    
+    vybrany_zobrazeni = st.session_state.ref_section_pick
+
+    with c_nav2:
+        metrika_ref = st.radio("Metrika:", ["Fauly", "Žluté karty"], horizontal=True, label_visibility="collapsed")
+    
+    # Mapování metriky
+    sloupce_metriky = ['HF', 'AF'] if metrika_ref == "Fauly" else ['HY', 'AY']
+    label_metriky = "Počet faulů" if metrika_ref == "Fauly" else "Počet ŽK"
+
+    # --- LOGIKA: VŠICHNI ROZHODČÍ (CELKEM) ---
+    if vybrany_zobrazeni == "CELKEM":
+        stats_all = []
+        for d_name, r_name in ref_mapping.items():
+            df_r = df_hist[df_hist['Referee'] == r_name]
+            if len(df_r) > 0:
+                celkem_stat = df_r[sloupce_metriky].sum(axis=1).mean()
+                stats_all.append({"Rozhodčí": d_name, "Průměr": round(celkem_stat, 2), "Zápasů": len(df_r)})
         
-        # Vytvoření tooltipu a formátování data
+        df_chart = pd.DataFrame(stats_all).sort_values("Průměr", ascending=False)
+        
+        # Graf všech rozhodčích + Textové popisky
+        base = alt.Chart(df_chart).encode(
+            x=alt.X('Průměr:Q', title=f'Průměr {metrika_ref} na zápas'),
+            y=alt.Y('Rozhodčí:N', sort='-x'),
+            tooltip=['Rozhodčí', 'Průměr', 'Zápasů']
+        )
+        
+        bars = base.mark_bar().encode(
+            color=alt.Color('Průměr:Q', scale=alt.Scale(scheme='blues'), legend=None)
+        )
+        
+        text = base.mark_text(
+            align='left',
+            baseline='middle',
+            dx=3  # Odsazení čísla od sloupce
+        ).encode(
+            text='Průměr:Q'
+        )
+        
+        st.altair_chart((bars + text).properties(height=600), use_container_width=True)
+
+    # --- LOGIKA: KONKRÉTNÍ ROZHODČÍ ---
+    else:
+        real_ref_name = ref_mapping[vybrany_zobrazeni]
+        df_ref = df_hist[df_hist['Referee'] == real_ref_name].copy()
+        
+        # Seřadíme chronologicky od nejstaršího
+        df_ref = df_ref.sort_values(by='Date', ascending=True)
+        
+        # Výpočty
+        df_ref['Hodnota'] = df_ref[sloupce_metriky].sum(axis=1)
+        df_ref['Zapas_Nazev'] = df_ref['HomeTeam'] + " vs " + df_ref['AwayTeam']
+        avg_season = df_ref['Hodnota'].mean()
+
+        # A) FORMA (5 zápasů)
+        last_5 = df_ref.tail(5).sort_values(by='Date', ascending=False)
+        forma_html = ""
+        for _, row in last_5.iterrows():
+            val = row['Hodnota']
+            color = "#2ca02c" if val > avg_season else "#d62728"
+            tooltip = f"{row['Date'].strftime('%d.%m.')}: {row['HomeTeam']} vs {row['AwayTeam']} ({int(val)})"
+            forma_html += f'<div style="width: 20px; height: 20px; background-color: {color}; border-radius: 50%; margin: 0 5px;" title="{tooltip}"></div>'
+        
+        st.markdown(f"""
+        <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 0.8rem; color: #555; margin-bottom: 8px; font-weight: bold;">FORMA (posledních 5 zápasů)</div>
+            <div style="display: flex; justify-content: center; align-items: center;">{forma_html}</div>
+            <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">Průměr sezóny: {round(avg_season, 1)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # B) GRAF HISTORIE + ČÍSLA
         df_ref['Datum_Str'] = df_ref['Date'].dt.strftime('%d.%m.%Y')
         
-        chart_hist = alt.Chart(df_ref).mark_bar().encode(
-            y=alt.Y('Zapas_Nazev:N', sort=None, title="Zápas (chronologicky)"), # sort=None bere pořadí z dataframe (který je seřazený)
+        # Základ grafu
+        base_hist = alt.Chart(df_ref).encode(
+            y=alt.Y('Zapas_Nazev:N', sort=None, title="Zápas (chronologicky)"),
             x=alt.X('Hodnota:Q', title=label_metriky),
+            tooltip=['Datum_Str', 'Zapas_Nazev', 'Hodnota']
+        )
+        
+        # Sloupce
+        bars_hist = base_hist.mark_bar().encode(
             color=alt.condition(
                 alt.datum.Hodnota > avg_season,
-                alt.value('#1f77b4'),  # Modrá pro nadprůměr
-                alt.value('#aec7e8')   # Světlá pro podprůměr
-            ),
-            tooltip=['Datum_Str', 'Zapas_Nazev', 'Hodnota']
-        ).properties(height=max(300, len(df_ref) * 30)) # Dynamická výška podle počtu zápasů
+                alt.value('#1f77b4'),
+                alt.value('#aec7e8')
+            )
+        )
         
-        st.altair_chart(chart_hist, use_container_width=True)
+        # Textová čísla
+        text_hist = base_hist.mark_text(
+            align='left',
+            baseline='middle',
+            dx=3,
+            color='white' # Aby bylo vidět na tmavém pozadí streamlitu, případně 'black' pokud máš světlé téma
+        ).encode(
+            text='Hodnota:Q'
+        )
+        
+        st.altair_chart((bars_hist + text_hist).properties(height=max(300, len(df_ref) * 35)), use_container_width=True)
 
-        # C) PREDIKCE (Tmavý box)
-        # Logika: Vážený průměr (aby odpovídal trendu posledních 5 zápasů vůči celku)
-        # Použijeme jednoduchý průměr mezi (Celkovým průměrem) a (Průměrem z posledních 5)
+        # C) PREDIKCE
         avg_last_5 = last_5['Hodnota'].mean() if not last_5.empty else avg_season
         predikce_val = (avg_season + avg_last_5) / 2
         
@@ -250,6 +359,7 @@ elif volba == "Rozhodčí":
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
