@@ -121,86 +121,8 @@ elif volba == "Týmové statistiky":
     ).properties(height=700)
     st.altair_chart(chart, use_container_width=True)
 
-# --- 5. ROZHODČÍ (NOVÁ VERZE) ---
-elif volba == "Rozhodčí":
-    st.markdown("### Analýza rozhodčích PL 25/26")
-    
-    # 1. Příprava seznamu rozhodčích (Příjmení Jméno)
-    original_refs = df_hist['Referee'].unique()
-    ref_mapping = {}
-    for r in original_refs:
-        if isinstance(r, str) and " " in r:
-            parts = r.split(" ")
-            formatted = f"{parts[-1]} {' '.join(parts[:-1])}" # Taylor Anthony
-            ref_mapping[formatted] = r
-        else: ref_mapping[r] = r
-    
-    # Seznam pro selectbox: CELKEM + seřazení rozhodčí
-    seznam_ref_display = ["CELKEM"] + sorted(ref_mapping.keys())
-    
-    # 2. UI Ovládání
-    vybrany_zobrazeni = st.selectbox("Vyber rozhodčího:", seznam_ref_display)
-    metrika_ref = st.radio("Zobrazit statistiku:", ["Fauly", "Žluté karty"], horizontal=True)
-    
-    # Mapování metriky na sloupce v datech
-    sloupce_metriky = ['HF', 'AF'] if metrika_ref == "Fauly" else ['HY', 'AY']
-    label_metriky = "Počet faulů" if metrika_ref == "Fauly" else "Počet ŽK"
 
-    # --- LOGIKA: VŠICHNI ROZHODČÍ (CELKEM) ---
-    if vybrany_zobrazeni == "CELKEM":
-        stats_all = []
-        for d_name, r_name in ref_mapping.items():
-            df_r = df_hist[df_hist['Referee'] == r_name]
-            if len(df_r) > 0:
-                celkem_stat = df_r[sloupce_metriky].sum(axis=1).mean()
-                stats_all.append({"Rozhodčí": d_name, "Průměr": round(celkem_stat, 2), "Zápasů": len(df_r)})
-        
-        df_chart = pd.DataFrame(stats_all).sort_values("Průměr", ascending=False)
-        
-        # Graf všech rozhodčích
-        chart = alt.Chart(df_chart).mark_bar().encode(
-            x=alt.X('Průměr:Q', title=f'Průměr {metrika_ref} na zápas'),
-            y=alt.Y('Rozhodčí:N', sort='-x'),
-            color=alt.Color('Průměr:Q', scale=alt.Scale(scheme='blues'), legend=None),
-            tooltip=['Rozhodčí', 'Průměr', 'Zápasů']
-        ).properties(height=600)
-        
-        st.altair_chart(chart, use_container_width=True)
 
-    # --- LOGIKA: KONKRÉTNÍ ROZHODČÍ ---
-    else:
-        real_ref_name = ref_mapping[vybrany_zobrazeni]
-        df_ref = df_hist[df_hist['Referee'] == real_ref_name].copy()
-        
-        # Seřadíme chronologicky od nejstaršího (pro graf)
-        df_ref = df_ref.sort_values(by='Date', ascending=True)
-        
-        # Vypočítáme metriku pro každý zápas
-        df_ref['Hodnota'] = df_ref[sloupce_metriky].sum(axis=1)
-        df_ref['Zapas_Nazev'] = df_ref['HomeTeam'] + " vs " + df_ref['AwayTeam']
-        
-        # Celkový průměr rozhodčího
-        avg_season = df_ref['Hodnota'].mean()
-
-        # A) FORMA (5 zápasů, zleva nejnovější)
-        last_5 = df_ref.tail(5).sort_values(by='Date', ascending=False) # Nejnovější první pro výpis
-        forma_html = ""
-        
-        for _, row in last_5.iterrows():
-            val = row['Hodnota']
-            color = "#2ca02c" if val > avg_season else "#d62728" # Zelená pro Over (více karet/faulů než průměr)
-            tooltip = f"{row['Date'].strftime('%d.%m.')}: {row['HomeTeam']} vs {row['AwayTeam']} ({int(val)})"
-            forma_html += f'<div style="width: 20px; height: 20px; background-color: {color}; border-radius: 50%; margin: 0 5px;" title="{tooltip}"></div>'
-        
-        st.markdown(f"""
-        <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-            <div style="font-size: 0.8rem; color: #555; margin-bottom: 8px; font-weight: bold;">FORMA (posledních 5 zápasů - zleva nejnovější)</div>
-            <div style="display: flex; justify-content: center; align-items: center;">
-                {forma_html}
-            </div>
-            <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">Zelená = Nad průměrem ({round(avg_season, 1)}) | Červená = Pod průměrem</div>
-        </div>
-        """, unsafe_allow_html=True)
 
 # --- 5. ROZHODČÍ (UPRAVENÁ VERZE S POPOVEREM A ČÍSLY) ---
 elif volba == "Rozhodčí":
