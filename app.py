@@ -100,27 +100,185 @@ if volba == "Tabulka PL":
 
     st.dataframe(df_res.style.apply(styluj_tabulku, axis=None), column_config={" ": st.column_config.ImageColumn(" ")}, use_container_width=True)
 
-# --- 4. TÝMOVÉ STATISTIKY ---
+# --- 4. TÝMOVÉ STATISTIKY (PŘEDĚLANÁ VERZE) ---
 elif volba == "Týmové statistiky":
-    metrika = st.radio("Metrika:", ["Žluté karty", "Fauly", "Rohy"], horizontal=True)
-    m = {"Žluté karty": ("HY", "AY"), "Fauly": ("HF", "AF"), "Rohy": ("HC", "AC")}[metrika]
-    plot_data = []
-    for t in týmy_seznam:
-        mask_h, mask_a = df_hist['HomeTeam']==t, df_hist['AwayTeam']==t
-        z = len(df_hist[mask_h | mask_a])
-        ud = (df_hist[mask_h][m[0]].sum() + df_hist[mask_a][m[1]].sum()) / z
-        ob = (df_hist[mask_h][m[1]].sum() + df_hist[mask_a][m[0]].sum()) / z
-        plot_data.append({"Tým": t, "Typ": "Udělané", "Hodnota": round(ud, 1)})
-        plot_data.append({"Tým": t, "Typ": "Obdržené", "Hodnota": round(ob, 1)})
-    df_p = pd.DataFrame(plot_data)
-    sort_order = alt.EncodingSortField(field="Hodnota", op="sum", order="descending")
-    chart = alt.Chart(df_p).mark_bar().encode(
-        y=alt.Y('Tým:N', sort=sort_order),
-        x=alt.X('Hodnota:Q'),
-        color=alt.Color('Typ:N', scale=alt.Scale(range=['#2ca02c', '#d62728']))
-    ).properties(height=700)
-    st.altair_chart(chart, use_container_width=True)
+    st.markdown("### Detailní týmové statistiky")
 
+    # 1. UI Ovládání (Popover + Radio)
+    # Session state pro zachování výběru
+    if 'team_stats_pick' not in st.session_state:
+        st.session_state.team_stats_pick = "CELKEM"
+
+    c_nav1, c_nav2 = st.columns([1, 1])
+    
+    with c_nav1:
+        team_list = ["CELKEM"] + sorted(týmy_seznam)
+        with st.popover(f"👕 Vyber tým: {st.session_state.team_stats_pick}", use_container_width=True):
+            st.radio("Seznam:", team_list, key="team_stats_pick")
+    
+    vybrany_team = st.session_state.team_stats_pick
+
+    with c_nav2:
+        metrika_team = st.radio("Metrika:", ["Fauly", "Žluté karty", "Rohy"], horizontal=True, label_visibility="collapsed")
+
+    # Mapování sloupců
+    map_metrics = {
+        "Žluté karty": {"h": "HY", "a": "AY", "label": "Žluté karty"},
+        "Fauly": {"h": "HF", "a": "AF", "label": "Fauly"},
+        "Rohy": {"h": "HC", "a": "AC", "label": "Rohy"}
+    }
+    cols = map_metrics[metrika_team]
+
+    # --- LOGIKA: CELKEM (PŘEHLED VŠECH TÝMŮ) ---
+    if vybrany_team == "CELKEM":
+        data_all = []
+        for t in týmy_seznam:
+            mask_h = df_hist['HomeTeam'] == t
+            mask_a = df_hist['AwayTeam'] == t
+            
+            # Výpočet průměrů na zápas
+            zapasu = mask_h.sum() + mask_a.sum()
+            if zapasu > 0:
+                # Pro (Udělané týmem)
+                pro = (df_hist[mask_h][cols['h']].sum() + df_hist[mask_a][cols['a']].sum()) / zapasu
+                # Proti (Obdržené od soupeře)
+                proti = (df_hist[mask_h][cols['a']].sum() + df_hist[mask_a][cols['h']].sum()) / zapasu
+                
+                data_all.append({"Tým": t, "Typ": "Pro (Udělané)", "Hodnota": round(pro, 1)})
+                data_all.append({"Tým": t, "Typ": "Proti (Obdržené)", "Hodnota": round(proti, 1)})
+
+        df_chart = pd.DataFrame(data_all)
+        
+        # Altair graf s dvojitými sloupci
+        base = alt.Chart(df_chart).encode(
+            y=alt.Y('Tým:N', title=None),
+            x=alt.X('Hodnota:Q', title=f'Průměr {metrika_team} na zápas'),
+            color=alt.Color('Typ:N', scale=alt.Scale(domain=['Pro (Udělané)', 'Proti (Obdržené)'], range=['#4dabf7', '#ff6b6b']), legend=alt.Legend(title="Legenda", orient="top"))
+        )
+
+        bars = base.mark_bar().encode(
+            yOffset='Typ:N' # Seskupení vedle sebe
+        )
+
+        text = base.mark_text(
+            align='left',
+            baseline='middle',
+            dx=3
+        ).encode(
+            yOffset='Typ:N',
+            text='Hodnota:Q'
+        )
+
+        st.altair_chart((bars + text).properties(height=800), use_container_width=True)
+
+    # --- LOGIKA: KONKRÉTNÍ TÝM ---
+    else:
+        # Získání všech zápasů týmu
+        df_team = df_hist[(df_hist['HomeTeam'] == vybrany_team) | (df_hist['AwayTeam'] == vybrany_team)].copy()
+        df_team['Date'] = pd.to_datetime(df_team['Date'], dayfirst=True)
+        df_team = df_team.sort_values(by='Date', ascending=True)
+
+        # Výpočet statistik pro každý zápas
+        stats_rows = []
+        for _, row in df_team.iterrows():
+            if row['HomeTeam'] == vybrany_team:
+                val_pro = row[cols['h']]
+                val_proti = row[cols['a']]
+                souper = row['AwayTeam']
+                kde = "(D)"
+            else:
+                val_pro = row[cols['a']]
+                val_proti = row[cols['h']]
+                souper = row['HomeTeam']
+                kde = "(V)"
+            
+            stats_rows.append({
+                "Datum": row['Date'],
+                "Zápas": f"{kde} vs {souper}",
+                "Pro": val_pro,
+                "Proti": val_proti
+            })
+        
+        df_stats = pd.DataFrame(stats_rows)
+        
+        # Průměry sezóny
+        avg_pro = df_stats['Pro'].mean()
+        avg_proti = df_stats['Proti'].mean()
+
+        # A) FORMA (5 zápasů, zleva nejnovější)
+        last_5 = df_stats.tail(5).sort_values(by='Datum', ascending=False)
+        forma_html = ""
+        for _, row in last_5.iterrows():
+            val = row['Pro']
+            # Zelená = Over average (více faulů/rohů než je průměr týmu), Červená = Under
+            color = "#2ca02c" if val > avg_pro else "#d62728"
+            tooltip = f"{row['Zápas']}: {int(val)} (Průměr: {round(avg_pro, 1)})"
+            forma_html += f'<div style="width: 20px; height: 20px; background-color: {color}; border-radius: 50%; margin: 0 5px;" title="{tooltip}"></div>'
+
+        st.markdown(f"""
+        <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 0.8rem; color: #555; margin-bottom: 8px; font-weight: bold;">FORMA (posledních 5 zápasů - zleva nejnovější)</div>
+            <div style="display: flex; justify-content: center; align-items: center;">{forma_html}</div>
+            <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">Zelená = Nad průměrem ({round(avg_pro, 1)}) | Červená = Pod průměrem</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # B) GRAF HISTORIE (Chronologicky, Dva sloupce)
+        # Převod na "Long format" pro Altair (aby šly sloupce vedle sebe)
+        df_long = df_stats.melt(id_vars=['Zápas', 'Datum'], value_vars=['Pro', 'Proti'], var_name='Typ', value_name='Hodnota')
+        
+        base_hist = alt.Chart(df_long).encode(
+            y=alt.Y('Zápas:N', sort=None, title="Zápas (chronologicky)"),
+            x=alt.X('Hodnota:Q', title=metrika_team),
+            color=alt.Color('Typ:N', scale=alt.Scale(domain=['Pro', 'Proti'], range=['#4dabf7', '#ff6b6b']), legend=alt.Legend(orient="top", title=None))
+        )
+        
+        bars_hist = base_hist.mark_bar().encode(
+            yOffset='Typ:N'
+        )
+        
+        text_hist = base_hist.mark_text(
+            align='left',
+            baseline='middle',
+            dx=3,
+            color='white'
+        ).encode(
+            yOffset='Typ:N',
+            text='Hodnota:Q'
+        )
+        
+        st.altair_chart((bars_hist + text_hist).properties(height=max(350, len(df_stats) * 40)), use_container_width=True)
+
+        # C) PREDIKCE (Vážený průměr)
+        avg_last_5_pro = last_5['Pro'].mean()
+        avg_last_5_proti = last_5['Proti'].mean()
+        
+        pred_pro = (avg_pro + avg_last_5_pro) / 2
+        pred_proti = (avg_proti + avg_last_5_proti) / 2
+        
+        style_box = "background-color: #2b3035; padding: 20px; border-radius: 12px; color: white; text-align: center; margin-top: 20px;"
+
+        st.markdown(f"""
+        <div style="{style_box}">
+            <div style="font-size: 0.9rem; color: #aaa; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">
+                🔮 Predikce pro další zápas
+            </div>
+            <div style="display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #444; padding-top: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.7rem; color: #4dabf7; margin-bottom: 5px;">OČEKÁVANÉ {metrika_team.upper()}</div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #fff;">{round(pred_pro, 1)}</div>
+                    <div style="font-size: 0.6rem; color: #888;">(Sezóna: {round(avg_pro, 1)})</div>
+                </div>
+                <div style="border-left: 1px solid #555; height: 40px;"></div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.7rem; color: #ff6b6b; margin-bottom: 5px;">OČEKÁVANÉ OD SOUPEŘE</div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #fff;">{round(pred_proti, 1)}</div>
+                     <div style="font-size: 0.6rem; color: #888;">(Sezóna: {round(avg_proti, 1)})</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
 
 
 
