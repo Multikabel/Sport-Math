@@ -55,17 +55,12 @@ if df_hist is None:
     st.stop()
 
 # --- WHO SCORED DATA ---
-st.info("Stahuji rozšířené statistiky z WhoScored...")
-
-import pandas as pd
 
 try:
     df_ws = pd.read_csv("whoscored_cache.csv")
 except:
     st.warning("WhoScored cache not found. Running without extended stats.")
     df_ws = None
-
-
 
 # Propojení WhoScored dat s hlavní tabulkou
 df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
