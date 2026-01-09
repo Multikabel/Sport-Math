@@ -543,18 +543,18 @@ except:
 # Finální predikce faulů
 ocek_fauly = f_base * ref_faktor * (1 + aggr_factor) * (1 + duel_factor)
 
-    # 4. Karty
-    ref_zk_avg = ref_data[['HY', 'AY']].sum().sum() / len(ref_data) if not ref_data.empty else 3.5
-    ocek_karty = ((df_hist[df_hist['HomeTeam']==t1]['HY'].mean() + df_hist[df_hist['AwayTeam']==t2]['AY'].mean()) + ref_zk_avg) / 2
+# 4. Karty
+ref_zk_avg = ref_data[['HY', 'AY']].sum().sum() / len(ref_data) if not ref_data.empty else 3.5
+ocek_karty = ((df_hist[df_hist['HomeTeam']==t1]['HY'].mean() + df_hist[df_hist['AwayTeam']==t2]['AY'].mean()) + ref_zk_avg) / 2
 
-    # --- VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
-    p_1, p_x, p_2 = 0, 0, 0
-    for i in range(10): # simulujeme skóre 0-9 gólů
-        for j in range(10):
-            p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
-            if i > j: p_1 += p
-            elif i < j: p_2 += p
-            else: p_x += p
+# --- VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
+p_1, p_x, p_2 = 0, 0, 0
+for i in range(10): # simulujeme skóre 0-9 gólů
+    for j in range(10):
+        p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
+        if i > j: p_1 += p
+        elif i < j: p_2 += p
+        else: p_x += p
     
     # Příprava procent pro pruh
     p1_pct = round(p_1 * 100)
