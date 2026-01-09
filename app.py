@@ -665,18 +665,18 @@ odd_2 = c_odds3.number_input(f"Kurz na {t2}", min_value=1.01, value=3.50, step=0
     
 odd_over = st.number_input("Kurz na Over 2.5 gólu", min_value=1.01, value=1.85, step=0.05)
 
-    if st.button("Analyzovat výhodnost kurzů", use_container_width=True):
-        def check_value(prob, odd, label):
-            value = (prob * odd) - 1
-            fair_kurz = 1/prob if prob > 0 else 0
-            if value > 0.05:
-                st.success(f"✅ **{label}**: Hodnota {round(value*100, 1)}% (Fair kurz: {round(fair_kurz, 2)})")
-            elif value < -0.15:
-                st.error(f"❌ **{label}**: Nevýhodné (Fair kurz: {round(fair_kurz, 2)})")
-            else:
-                st.warning(f"⚖️ **{label}**: Bez výrazné hodnoty (Fair kurz: {round(fair_kurz, 2)})")
+if st.button("Analyzovat výhodnost kurzů", use_container_width=True):
+    def check_value(prob, odd, label):
+        value = (prob * odd) - 1
+        fair_kurz = 1/prob if prob > 0 else 0
+        if value > 0.05:
+            st.success(f"✅ **{label}**: Hodnota {round(value*100, 1)}% (Fair kurz: {round(fair_kurz, 2)})")
+        elif value < -0.15:
+            st.error(f"❌ **{label}**: Nevýhodné (Fair kurz: {round(fair_kurz, 2)})")
+        else:
+            st.warning(f"⚖️ **{label}**: Bez výrazné hodnoty (Fair kurz: {round(fair_kurz, 2)})")
 
-        check_value(p_1, odd_1, f"Výhra {t1}")
-        check_value(p_x, odd_x, "Remíza")
-        check_value(p_2, odd_2, f"Výhra {t2}")
-        check_value(prob_over_2_5, odd_over, "Over 2.5 gólu")
+    check_value(p_1, odd_1, f"Výhra {t1}")
+    check_value(p_x, odd_x, "Remíza")
+    check_value(p_2, odd_2, f"Výhra {t2}")
+    check_value(prob_over_2_5, odd_over, "Over 2.5 gólu")
