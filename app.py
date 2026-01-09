@@ -58,9 +58,18 @@ if df_hist is None:
 
 try:
     df_ws = pd.read_csv("whoscored_cache.csv")
+    st.success("Načtena WhoScored cache.")
 except:
-    st.warning("WhoScored cache not found. Running without extended stats.")
+    st.warning("WhoScored cache nenalezena. Aplikace poběží bez rozšířených statistik.")
     df_ws = None
+
+if isinstance(df_ws, pd.DataFrame):
+    df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
+    df_hist = df_hist.merge(df_ws, left_on="AwayTeam", right_on="Team",
+                            suffixes=("_home", "_away"), how="left")
+    df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")
+else:
+    st.warning("WhoScored data nejsou dostupná – pokračuji bez nich.")
 
 # Propojení WhoScored dat s hlavní tabulkou
 df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
