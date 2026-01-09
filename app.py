@@ -653,17 +653,17 @@ if ocek_karty > 4.5: tipy.append("🟨 **Karty:** Over 3.5")
     
 for t in tipy: st.info(t)
 
-    # --- SEKCE VALUE BETS ---
-    st.write("---")
-    st.subheader("💰 Vyhledávač Value Bets")
-    st.caption("Porovnej kurzy sázkové kanceláře s matematickým modelem")
+# --- SEKCE VALUE BETS ---
+st.write("---")
+st.subheader("💰 Vyhledávač Value Bets")
+st.caption("Porovnej kurzy sázkové kanceláře s matematickým modelem")
 
-    c_odds1, c_odds2, c_odds3 = st.columns(3)
-    odd_1 = c_odds1.number_input(f"Kurz na {t1}", min_value=1.01, value=2.00, step=0.05)
-    odd_x = c_odds2.number_input("Kurz na Remízu", min_value=1.01, value=3.20, step=0.05)
-    odd_2 = c_odds3.number_input(f"Kurz na {t2}", min_value=1.01, value=3.50, step=0.05)
+c_odds1, c_odds2, c_odds3 = st.columns(3)
+odd_1 = c_odds1.number_input(f"Kurz na {t1}", min_value=1.01, value=2.00, step=0.05)
+odd_x = c_odds2.number_input("Kurz na Remízu", min_value=1.01, value=3.20, step=0.05)
+odd_2 = c_odds3.number_input(f"Kurz na {t2}", min_value=1.01, value=3.50, step=0.05)
     
-    odd_over = st.number_input("Kurz na Over 2.5 gólu", min_value=1.01, value=1.85, step=0.05)
+odd_over = st.number_input("Kurz na Over 2.5 gólu", min_value=1.01, value=1.85, step=0.05)
 
     if st.button("Analyzovat výhodnost kurzů", use_container_width=True):
         def check_value(prob, odd, label):
