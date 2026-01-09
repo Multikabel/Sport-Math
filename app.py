@@ -556,102 +556,102 @@ for i in range(10): # simulujeme skóre 0-9 gólů
         elif i < j: p_2 += p
         else: p_x += p
     
-    # Příprava procent pro pruh
-    p1_pct = round(p_1 * 100)
-    px_pct = round(p_x * 100)
-    p2_pct = 100 - p1_pct - px_pct
+# Příprava procent pro pruh
+p1_pct = round(p_1 * 100)
+px_pct = round(p_x * 100)
+p2_pct = 100 - p1_pct - px_pct
     
-    # --- VIZUALIZACE ---
-    st.markdown(f"""<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
-        <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t1)}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span></div>
-        <div style="text-align: center; width: 40%;"><h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1></div>
-        <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t2)}" width="100"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2.upper()}</span></div>
-    </div>""", unsafe_allow_html=True)
+# --- VIZUALIZACE ---
+st.markdown(f"""<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+    <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t1)}" width="80"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span></div>
+    <div style="text-align: center; width: 40%;"><h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1></div>
+    <div style="text-align: center; width: 30%;"><img src="{LOGA_TYMU.get(t2)}" width="100"><br><span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2.upper()}</span></div>
+</div>""", unsafe_allow_html=True)
 
-    # --- FORMA ---
-    f1 = ziskej_formu(t1, df_hist)[::-1]
-    f2 = ziskej_formu(t2, df_hist)[::-1]
+# --- FORMA ---
+f1 = ziskej_formu(t1, df_hist)[::-1]
+f2 = ziskej_formu(t2, df_hist)[::-1]
     
-    forma_html = f"""
-    <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 0.85rem; font-weight: bold; color: #666; margin-bottom: 5px;">AKTUÁLNÍ FORMA</div>
-        <div style="display: flex; justify-content: center; gap: 30px; font-size: 1.1rem; letter-spacing: 2px;">
-            <div>{f1}</div>
-            <div style="color: #ccc; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center;">VS</div>
-            <div>{f2}</div>
+forma_html = f"""
+<div style="text-align: center; margin-bottom: 20px;">
+    <div style="font-size: 0.85rem; font-weight: bold; color: #666; margin-bottom: 5px;">AKTUÁLNÍ FORMA</div>
+    <div style="display: flex; justify-content: center; gap: 30px; font-size: 1.1rem; letter-spacing: 2px;">
+        <div>{f1}</div>
+        <div style="color: #ccc; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center;">VS</div>
+        <div>{f2}</div>
+    </div>
+</div>
+"""
+st.markdown(forma_html, unsafe_allow_html=True)
+
+# --- VIZUALIZACE VÝSLEDKŮ ---
+style_box = "background-color: #2b3035; padding: 15px; border-radius: 12px; color: white; margin-bottom: 5px; text-align: center;"
+
+# 1. HORNÍ BOX (Góly a skóre)
+st.markdown(f"""
+<div style="{style_box} border-bottom: 1px solid #444; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+    <div style="display: flex; justify-content: space-around; align-items: center;">
+        <div>
+            <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Domácí</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #4dabf7;">{round(mu_d, 2)}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">Predikce skóre</div>
+            <div style="font-size: 2rem; font-weight: bold;">{round(mu_d)} : {round(mu_h)}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Hosté</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #ff6b6b;">{round(mu_h, 2)}</div>
         </div>
     </div>
-    """
-    st.markdown(forma_html, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
-    # --- VIZUALIZACE VÝSLEDKŮ ---
-    style_box = "background-color: #2b3035; padding: 15px; border-radius: 12px; color: white; margin-bottom: 5px; text-align: center;"
-
-    # 1. HORNÍ BOX (Góly a skóre)
-    st.markdown(f"""
-    <div style="{style_box} border-bottom: 1px solid #444; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
-        <div style="display: flex; justify-content: space-around; align-items: center;">
-            <div>
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Domácí</div>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #4dabf7;">{round(mu_d, 2)}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">Predikce skóre</div>
-                <div style="font-size: 2rem; font-weight: bold;">{round(mu_d)} : {round(mu_h)}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Hosté</div>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #ff6b6b;">{round(mu_h, 2)}</div>
-            </div>
+# 2. DOLNÍ BOX (Rohy, Fauly, Karty)
+st.markdown(f"""
+<div style="{style_box} border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 10px;">
+    <div style="display: flex; justify-content: space-around; align-items: center;">
+        <div>
+            <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🚩 Rohy</div>
+            <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_rohy, 1)}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">⚖️ Fauly</div>
+            <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_fauly, 1)}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🟨 Karty</div>
+            <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_karty, 1)}</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-
-    # 2. DOLNÍ BOX (Rohy, Fauly, Karty)
-    st.markdown(f"""
-    <div style="{style_box} border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 10px;">
-        <div style="display: flex; justify-content: space-around; align-items: center;">
-            <div>
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🚩 Rohy</div>
-                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_rohy, 1)}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">⚖️ Fauly</div>
-                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_fauly, 1)}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🟨 Karty</div>
-                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_karty, 1)}</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
     
-    # 3. VÝPOČET PROCENT A VIZUÁLNÍ PRUH (1-X-2)
-    st.markdown(f"""
-    <div style="margin-top: -5px; margin-bottom: 25px;">
-        <div style="display: flex; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444;">
-            <div style="width: {p1_pct}%; background-color: #4dabf7;" title="Výhra domácích"></div>
-            <div style="width: {px_pct}%; background-color: #666;" title="Remíza"></div>
-            <div style="width: {p2_pct}%; background-color: #ff6b6b;" title="Výhra hostů"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; padding-top: 5px; font-weight: bold;">
-            <span>{t1}: {p1_pct}%</span>
-            <span>REMÍZA: {px_pct}%</span>
-            <span>{t2}: {p2_pct}%</span>
-        </div>
+# 3. VÝPOČET PROCENT A VIZUÁLNÍ PRUH (1-X-2)
+st.markdown(f"""
+<div style="margin-top: -5px; margin-bottom: 25px;">
+    <div style="display: flex; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444;">
+        <div style="width: {p1_pct}%; background-color: #4dabf7;" title="Výhra domácích"></div>
+        <div style="width: {px_pct}%; background-color: #666;" title="Remíza"></div>
+        <div style="width: {p2_pct}%; background-color: #ff6b6b;" title="Výhra hostů"></div>
     </div>
-    """, unsafe_allow_html=True)
+    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; padding-top: 5px; font-weight: bold;">
+        <span>{t1}: {p1_pct}%</span>
+        <span>REMÍZA: {px_pct}%</span>
+        <span>{t2}: {p2_pct}%</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-    # Tipy
-    st.subheader("💡 Doporučené tipy")
-    tipy = []
-    if celkem_goly > 3.0: tipy.append("🔥 **Góly:** Over 2.5")
-    if ocek_rohy > 11.0: tipy.append("🚩 **Rohy:** Over 10.5")
-    if ocek_fauly > 24: tipy.append(f"⚠️ **Fauly:** Over 23.5 (Ref faktor: {round(ref_faktor, 2)})")
-    if ocek_karty > 4.5: tipy.append("🟨 **Karty:** Over 3.5")
+# Tipy
+st.subheader("💡 Doporučené tipy")
+tipy = []
+if celkem_goly > 3.0: tipy.append("🔥 **Góly:** Over 2.5")
+if ocek_rohy > 11.0: tipy.append("🚩 **Rohy:** Over 10.5")
+if ocek_fauly > 24: tipy.append(f"⚠️ **Fauly:** Over 23.5 (Ref faktor: {round(ref_faktor, 2)})")
+if ocek_karty > 4.5: tipy.append("🟨 **Karty:** Over 3.5")
     
-    for t in tipy: st.info(t)
+for t in tipy: st.info(t)
 
     # --- SEKCE VALUE BETS ---
     st.write("---")
