@@ -79,7 +79,7 @@ if df_ws is not None:
     df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
     df_hist = df_hist.merge(df_ws, left_on="AwayTeam", right_on="Team",
                             suffixes=("_home", "_away"), how="left")
-    df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")am'
+    df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")
 df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")
 
 # --- GLOBÁLNÍ VÝPOČET TABULKY ---
