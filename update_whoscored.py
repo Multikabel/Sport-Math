@@ -1,5 +1,6 @@
 import asyncio
 from playwright.async_api import async_playwright
+import requests
 import pandas as pd
 
 TEAM_IDS = {
@@ -25,14 +26,31 @@ TEAM_IDS = {
     "Wolves": 38
 }
 
-async def fetch_stats(team, team_id, page):
+async def get_cookies():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False)  # první běh necháme viditelný
+        context = await browser.new_context()
+        page = await context.new_page()
+
+        print("Oteviram WhoScored...")
+        await page.goto("https://www.whoscored.com", timeout=60000)
+
+        print("Cekam na JS challenge...")
+        await page.wait_for_timeout(8000)
+
+        cookies = await context.cookies()
+        await browser.close()
+
+        return {c["name"]: c["value"] for c in cookies}
+
+def fetch_stats(team, team_id, cookies):
     url = (
         "https://www.whoscored.com/StatisticsFeed/1/GetTeamStatistics"
         f"?teamId={team_id}&category=summary&subcategory=all&statsAccumulationType=0&isCurrent=true"
     )
 
-    response = await page.request.get(url)
-    data = await response.json()
+    response = requests.get(url, cookies=cookies, headers={"User-Agent": "Mozilla/5.0"})
+    data = response.json()
 
     stats = {item["name"]: item["value"] for item in data.get("teamTableStats", [])}
 
@@ -47,21 +65,16 @@ async def fetch_stats(team, team_id, page):
     }
 
 async def main():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context()
+    cookies = await get_cookies()
 
-        page = await context.new_page()
-        await page.goto("https://www.whoscored.com", timeout=60000)
+    rows = []
+    for team, team_id in TEAM_IDS.items():
+        print(f"Stahuju statistiky pro {team}...")
+        row = fetch_stats(team, team_id, cookies)
+        rows.append(row)
 
-        rows = []
-        for team, team_id in TEAM_IDS.items():
-            print(f"Downloading stats for {team}...")
-            row = await fetch_stats(team, team_id, page)
-            rows.append(row)
-
-        df = pd.DataFrame(rows)
-        df.to_csv("whoscored_cache.csv", index=False)
-        print("Saved whoscored_cache.csv")
+    df = pd.DataFrame(rows)
+    df.to_csv("whoscored_cache.csv", index=False)
+    print("Hotovo! whoscored_cache.csv ulozen.")
 
 asyncio.run(main())
