@@ -57,13 +57,34 @@ if df_hist is None:
 # --- WHO SCORED DATA ---
 st.info("Stahuji rozšířené statistiky z WhoScored...")
 
-df_ws = get_whoscored_features(df_hist)
+import pandas as pd
+
+try:
+    df_ws = pd.read_csv("whoscored_cache.csv")
+except:
+    st.warning("WhoScored cache not found. Running without extended stats.")
+    df_ws = None
+
+
 
 # Propojení WhoScored dat s hlavní tabulkou
 df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
 df_hist = df_hist.merge(df_ws, left_on="AwayTeam", right_on="Team", suffixes=("_home", "_away"), how="left")
 
-# Odstraníme duplicitní sloupce 'Team'
+# Odstraníme duplicitní sloupce 'Te# --- WHO SCORED DATA (CACHE) ---
+try:
+    df_ws = pd.read_csv("whoscored_cache.csv")
+    st.success("Načtena WhoScored cache.")
+except:
+    st.warning("WhoScored cache nenalezena. Aplikace poběží bez rozšířených statistik.")
+    df_ws = None
+
+# Propojení WhoScored dat s hlavní tabulkou
+if df_ws is not None:
+    df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
+    df_hist = df_hist.merge(df_ws, left_on="AwayTeam", right_on="Team",
+                            suffixes=("_home", "_away"), how="left")
+    df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")am'
 df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")
 
 # --- GLOBÁLNÍ VÝPOČET TABULKY ---
