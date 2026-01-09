@@ -33,8 +33,8 @@ def load_whoscored():
         "Referer": "https://www.whoscored.com"
     }
 
-    def fetch(cat):
-        r = requests.get(url, params={"stageId": stage_id, "category": cat}, headers=headers)
+    def fetch(category):
+        r = requests.get(url, params={"stageId": stage_id, "category": category}, headers=headers)
         return r.json()["teamTableStats"]
 
     disc = fetch("Discipline")
@@ -50,28 +50,23 @@ def load_whoscored():
             "DuelIntensity": s["stats"]["duelIntensity"]
         })
 
-    return pd.DataFrame(rows)
+    df_ws = pd.DataFrame(rows)
+    df_ws = df_ws.set_index("Team")  # 🔑 pro lookup
+    if df_ws.index.duplicated().any():
+        st.error("Duplicitní týmy ve WhoScored datech")
+        st.stop()
+    return df_ws
 
+# =========================
+# NAČTENÍ
+# =========================
 df = load_matches()
 ws = load_whoscored()
-
 teams = sorted(df["HomeTeam"].unique())
 
 # =========================
 # FEATURE ENGINEERING
 # =========================
-def rolling_avg(df, team, col, date, n=5):
-    hist = df[(df["Date"] < date) &
-              ((df["HomeTeam"] == team) | (df["AwayTeam"] == team))]
-
-    vals = []
-    for _, r in hist.tail(n).iterrows():
-        if r["HomeTeam"] == team:
-            vals.append(r[col])
-        else:
-            vals.append(r[col.replace("H", "A")])
-    return np.mean(vals) if vals else np.nan
-
 def build_dataset():
     rows = []
 
@@ -79,9 +74,9 @@ def build_dataset():
         h, a, d = r["HomeTeam"], r["AwayTeam"], r["Date"]
 
         try:
-            ws_h = ws[ws.Team == h].iloc[0]
-            ws_a = ws[ws.Team == a].iloc[0]
-        except:
+            ws_h = ws.loc[h]
+            ws_a = ws.loc[a]
+        except KeyError:
             continue
 
         rows.append({
@@ -89,6 +84,7 @@ def build_dataset():
             "Cards": r["HY"] + r["AY"],
             "Corners": r["HC"] + r["AC"],
 
+            # WhoScored lookup
             "agg_sum": ws_h.Aggression + ws_a.Aggression,
             "duel_sum": ws_h.DuelIntensity + ws_a.DuelIntensity
         })
@@ -109,10 +105,10 @@ def fit_negative_binomial(y):
     p = r / (r + mu)
     return r, p
 
-def distribution(mu, dist, r=None, p=None, max_k=60):
+def distribution(mu, dist_type="poisson", r=None, p=None, max_k=60):
     probs = []
     for k in range(max_k + 1):
-        if dist == "poisson":
+        if dist_type == "poisson":
             probs.append(poisson.pmf(k, mu))
         else:
             probs.append(nbinom.pmf(k, r, p))
@@ -138,8 +134,9 @@ if section == "Predikce zápasu":
         st.warning("Vyber dva různé týmy.")
         st.stop()
 
-    ws_h = ws[ws.Team == home].iloc[0]
-    ws_a = ws[ws.Team == away].iloc[0]
+    # WhoScored lookup
+    ws_h = ws.loc[home]
+    ws_a = ws.loc[away]
 
     agg = ws_h.Aggression + ws_a.Aggression
     duel = ws_h.DuelIntensity + ws_a.DuelIntensity
@@ -152,6 +149,7 @@ if section == "Predikce zápasu":
 
     for label, (col, model) in results.items():
         y = dataset[col]
+        # upravený mu podle aggression
         mu = y.mean() * (agg / dataset.agg_sum.mean())
 
         if model == "nb":
@@ -183,18 +181,3 @@ else:
 
     ### 🧠 Vstupy:
     - Team Aggression (WhoScored)
-    - Duel Intensity (WhoScored)
-    - Match-level data (football-data.co.uk)
-
-    ### ⚠️ Poznámka
-    Model je **statistický baseline**, ideální pro:
-    - přesné počty
-    - over/under pricing
-    - betting simulace
-
-    Další zlepšení:
-    - referee bias
-    - home/away split
-    - rolling match stats
-    - XGBoost / GAM
-    """)
