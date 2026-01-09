@@ -1,3 +1,4 @@
+from whoscored import get_whoscored_features
 import pandas as pd
 import streamlit as st
 import requests
@@ -52,6 +53,18 @@ df_hist = nacti_data()
 if df_hist is None:
     st.error("Nepodařilo se načíst data.")
     st.stop()
+
+# --- WHO SCORED DATA ---
+st.info("Stahuji rozšířené statistiky z WhoScored...")
+
+df_ws = get_whoscored_features(df_hist)
+
+# Propojení WhoScored dat s hlavní tabulkou
+df_hist = df_hist.merge(df_ws, left_on="HomeTeam", right_on="Team", how="left")
+df_hist = df_hist.merge(df_ws, left_on="AwayTeam", right_on="Team", suffixes=("_home", "_away"), how="left")
+
+# Odstraníme duplicitní sloupce 'Team'
+df_hist = df_hist.drop(columns=["Team_home", "Team_away"], errors="ignore")
 
 # --- GLOBÁLNÍ VÝPOČET TABULKY ---
 týmy_seznam = sorted(df_hist['HomeTeam'].unique())
@@ -505,8 +518,30 @@ elif volba == "Simulátor zápasů":
     ref_avg_f = ref_data[['HF', 'AF']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_f
     ref_faktor = ref_avg_f / ligovy_avg_f if ligovy_avg_f > 0 else 1.0
     
-    f_base = (ziskej_stats_sila(t1, 'Home', sila_t2, 'HF') + ziskej_stats_sila(t2, 'Away', sila_t1, 'AF'))
-    ocek_fauly = f_base * ref_faktor
+    # Základní fauly podle football-data
+f_base = (
+    ziskej_stats_sila(t1, 'Home', sila_t2, 'HF') +
+    ziskej_stats_sila(t2, 'Away', sila_t1, 'AF')
+)
+
+# WhoScored faktory
+try:
+    aggr_factor = (
+        df_ws[df_ws["Team"] == t1]["Aggression"].values[0] +
+        df_ws[df_ws["Team"] == t2]["Aggression"].values[0]
+    ) / 200  # normalizace
+
+    duel_factor = (
+        df_ws[df_ws["Team"] == t1]["DuelIntensity"].values[0] +
+        df_ws[df_ws["Team"] == t2]["DuelIntensity"].values[0]
+    ) / 200
+
+except:
+    aggr_factor = 0
+    duel_factor = 0
+
+# Finální predikce faulů
+ocek_fauly = f_base * ref_faktor * (1 + aggr_factor) * (1 + duel_factor)
 
     # 4. Karty
     ref_zk_avg = ref_data[['HY', 'AY']].sum().sum() / len(ref_data) if not ref_data.empty else 3.5
