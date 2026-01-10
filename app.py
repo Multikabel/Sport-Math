@@ -9,7 +9,7 @@ import math
 st.set_page_config(page_title="PL Analytika 2026", layout="wide", page_icon="⚽")
 
 def poisson_pmf(k, mu):
-    if mu <= 0: 
+    if mu <= 0:
         return 1.0 if k == 0 else 0.0
     try:
         return (math.exp(-mu) * (mu**k)) / math.factorial(k)
@@ -91,7 +91,9 @@ def get_ws_metrics(team_fd_name):
             "tackles": 0.0,
             "interceptions": 0.0,
             "shots": 0.0,
-            "dribbles": 0.0
+            "dribbles": 0.0,
+            "xg": 0.0,
+            "goals": 0.0
         }
     return {
         "fouls": ws.get("Fouls pg", 0.0),
@@ -99,7 +101,9 @@ def get_ws_metrics(team_fd_name):
         "tackles": ws.get("Tackles pg", 0.0),
         "interceptions": ws.get("Interceptions pg", 0.0),
         "shots": ws.get("Shots pg", 0.0),
-        "dribbles": ws.get("Dribbles pg", 0.0)
+        "dribbles": ws.get("Dribbles pg", 0.0),
+        "xg": ws.get("xG", 0.0),
+        "goals": ws.get("Goals", 0.0)
     }
 
 def compute_team_history_stats(df_hist, team, cols):
@@ -140,8 +144,8 @@ def compute_team_history_stats(df_hist, team, cols):
 
 def compute_predictions_for_team(team, metrika_team, df_hist, map_metrics):
     """
-    Vrátí predikci (pred_pro, pred_proti) pro daný tým a zvolenou metriku,
-    s využitím kombinace: sezóna + forma + WhoScored.
+    Vrátí predikci (pred_pro, pred_proti, avg_pro, avg_proti, avg_last_5_pro, avg_last_5_proti)
+    pro daný tým a zvolenou metriku, s využitím kombinace: sezóna + forma + WhoScored.
     """
     cols = map_metrics[metrika_team]
 
@@ -220,13 +224,15 @@ def ziskej_formu(team, df):
             forma.append("🔴")
     return "".join(forma)
 
-# --- GLOBÁLNÍ VÝPOČET TABULKY ---
+# --- GLOBÁLNÍ VÝPOČET TABULKY + SÍLA TÝMŮ ---
 týmy_seznam = sorted(df_hist['HomeTeam'].unique())
 tabulka_vypocet = []
 for t in týmy_seznam:
-    d, v = df_hist[df_hist['HomeTeam'] == t], df_hist[df_hist['AwayTeam'] == t]
+    d = df_hist[df_hist['HomeTeam'] == t]
+    v = df_hist[df_hist['AwayTeam'] == t]
     b = (d['FTR']=='H').sum()*3 + (d['FTR']=='D').sum()*1 + (v['FTR']=='A').sum()*3 + (v['FTR']=='D').sum()*1
-    sv, so = (d['FTHG'].sum() + v['FTAG'].sum()), (d['FTAG'].sum() + v['FTHG'].sum())
+    sv = d['FTHG'].sum() + v['FTAG'].sum()
+    so = d['FTAG'].sum() + v['FTHG'].sum()
     tabulka_vypocet.append({"Tým": t, "B": b, "GD": sv-so})
 
 df_top = pd.DataFrame(tabulka_vypocet).sort_values(by=["B", "GD"], ascending=False).reset_index(drop=True)
@@ -235,14 +241,15 @@ df_top.index += 1
 def urci_silu(tym):
     try:
         pozice = df_top[df_top['Tým'] == tym].index[0]
-        if pozice <= 6: 
+        if pozice <= 6:
             return 'A'
-        elif pozice >= 15: 
+        elif pozice >= 15:
             return 'C'
-        else: 
+        else:
             return 'B'
     except:
         return 'B'
+
 
 # --- 2. NAVIGACE ---
 st.sidebar.title("⚽ SPORT-MATH")
@@ -359,12 +366,10 @@ elif volba == "Týmové statistiky":
 
     # --- LOGIKA: KONKRÉTNÍ TÝM ---
     else:
-        # Získání všech zápasů týmu
         df_team = df_hist[(df_hist['HomeTeam'] == vybrany_team) | (df_hist['AwayTeam'] == vybrany_team)].copy()
         df_team['Date'] = pd.to_datetime(df_team['Date'], dayfirst=True)
         df_team = df_team.sort_values(by='Date', ascending=True)
 
-        # Výpočet statistik pro každý zápas
         stats_rows = []
         for _, row in df_team.iterrows():
             if row['HomeTeam'] == vybrany_team:
@@ -387,11 +392,10 @@ elif volba == "Týmové statistiky":
         
         df_stats = pd.DataFrame(stats_rows)
         
-        # Průměry sezóny
         avg_pro = df_stats['Pro'].mean()
         avg_proti = df_stats['Proti'].mean()
 
-        # A) FORMA (5 zápasů, zleva nejnovější)
+        # FORMA (5 zápasů)
         last_5 = df_stats.tail(5).sort_values(by='Datum', ascending=False)
         forma_html = ""
         for _, row in last_5.iterrows():
@@ -408,7 +412,7 @@ elif volba == "Týmové statistiky":
         </div>
         """, unsafe_allow_html=True)
 
-        # B) GRAF HISTORIE (Chronologicky, Dva sloupce)
+        # GRAF HISTORIE
         df_long = df_stats.melt(
             id_vars=['Zápas', 'Datum'], 
             value_vars=['Pro', 'Proti'], 
@@ -442,7 +446,7 @@ elif volba == "Týmové statistiky":
         
         st.altair_chart((bars_hist + text_hist).properties(height=max(350, len(df_stats) * 40)), use_container_width=True)
 
-        # C) PREDIKCE – NOVÝ KOMBINOVANÝ MODEL
+        # --- PREDIKCE – NOVÝ KOMBINOVANÝ MODEL ---
         pred_pro, pred_proti, avg_pro_all, avg_proti_all, avg_last_5_pro, avg_last_5_proti = compute_predictions_for_team(
             vybrany_team, metrika_team, df_hist, map_metrics
         )
@@ -470,11 +474,13 @@ elif volba == "Týmové statistiky":
         </div>
         """, unsafe_allow_html=True)
 
-# --- 5. ROZHODČÍ ---
+
+
+    # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
     st.markdown("### Analýza rozhodčích PL 25/26")
     
-    # Příprava seznamu rozhodčích
+    # 1. Příprava seznamu rozhodčích (Příjmení Jméno)
     original_refs = df_hist['Referee'].unique()
     ref_mapping = {}
     for r in original_refs:
@@ -487,6 +493,7 @@ elif volba == "Rozhodčí":
     
     seznam_ref_display = ["CELKEM"] + sorted(ref_mapping.keys())
     
+    # Session state pro výběr rozhodčího
     if 'ref_section_pick' not in st.session_state:
         st.session_state.ref_section_pick = "CELKEM"
 
@@ -501,17 +508,22 @@ elif volba == "Rozhodčí":
     with c_nav2:
         metrika_ref = st.radio("Metrika:", ["Fauly", "Žluté karty"], horizontal=True, label_visibility="collapsed")
     
+    # Mapování metriky
     sloupce_metriky = ['HF', 'AF'] if metrika_ref == "Fauly" else ['HY', 'AY']
     label_metriky = "Počet faulů" if metrika_ref == "Fauly" else "Počet ŽK"
 
-    # CELKEM
+    # --- LOGIKA: VŠICHNI ROZHODČÍ (CELKEM) ---
     if vybrany_zobrazeni == "CELKEM":
         stats_all = []
         for d_name, r_name in ref_mapping.items():
             df_r = df_hist[df_hist['Referee'] == r_name]
             if len(df_r) > 0:
                 celkem_stat = df_r[sloupce_metriky].sum(axis=1).mean()
-                stats_all.append({"Rozhodčí": d_name, "Průměr": round(celkem_stat, 2), "Zápasů": len(df_r)})
+                stats_all.append({
+                    "Rozhodčí": d_name,
+                    "Průměr": round(celkem_stat, 2),
+                    "Zápasů": len(df_r)
+                })
         
         df_chart = pd.DataFrame(stats_all).sort_values("Průměr", ascending=False)
         
@@ -529,13 +541,11 @@ elif volba == "Rozhodčí":
             align='left',
             baseline='middle',
             dx=3
-        ).encode(
-            text='Průměr:Q'
-        )
+        ).encode(text='Průměr:Q')
         
         st.altair_chart((bars + text).properties(height=600), use_container_width=True)
 
-    # KONKRÉTNÍ ROZHODČÍ
+    # --- LOGIKA: KONKRÉTNÍ ROZHODČÍ ---
     else:
         real_ref_name = ref_mapping[vybrany_zobrazeni]
         df_ref = df_hist[df_hist['Referee'] == real_ref_name].copy()
@@ -546,24 +556,34 @@ elif volba == "Rozhodčí":
         df_ref['Zapas_Nazev'] = df_ref['HomeTeam'] + " vs " + df_ref['AwayTeam']
         avg_season = df_ref['Hodnota'].mean()
 
-        # FORMA (5)
+        # A) FORMA (5 zápasů)
         last_5 = df_ref.tail(5).sort_values(by='Date', ascending=False)
         forma_html = ""
         for _, row in last_5.iterrows():
             val = row['Hodnota']
             color = "#2ca02c" if val > avg_season else "#d62728"
             tooltip = f"{row['Date'].strftime('%d.%m.')}: {row['HomeTeam']} vs {row['AwayTeam']} ({int(val)})"
-            forma_html += f'<div style="width: 20px; height: 20px; background-color: {color}; border-radius: 50%; margin: 0 5px;" title="{tooltip}"></div>'
+            forma_html += (
+                f'<div style="width: 20px; height: 20px; background-color: {color}; '
+                f'border-radius: 50%; margin: 0 5px;" title="{tooltip}"></div>'
+            )
         
         st.markdown(f"""
-        <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-            <div style="font-size: 0.8rem; color: #555; margin-bottom: 8px; font-weight: bold;">FORMA (posledních 5 zápasů)</div>
-            <div style="display: flex; justify-content: center; align-items: center;">{forma_html}</div>
-            <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">Průměr sezóny: {round(avg_season, 1)}</div>
+        <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; 
+                    margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 0.8rem; color: #555; margin-bottom: 8px; font-weight: bold;">
+                FORMA (posledních 5 zápasů)
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center;">
+                {forma_html}
+            </div>
+            <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">
+                Průměr sezóny: {round(avg_season, 1)}
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # GRAF HISTORIE
+        # B) GRAF HISTORIE
         df_ref['Datum_Str'] = df_ref['Date'].dt.strftime('%d.%m.%Y')
         
         base_hist = alt.Chart(df_ref).encode(
@@ -585,121 +605,335 @@ elif volba == "Rozhodčí":
             baseline='middle',
             dx=3,
             color='white'
-        ).encode(
-            text='Hodnota:Q'
-        )
+        ).encode(text='Hodnota:Q')
         
-        st.altair_chart((bars_hist + text_hist).properties(height=max(300, len(df_ref) * 35)), use_container_width=True)
+        st.altair_chart((bars_hist + text_hist).properties(
+            height=max(300, len(df_ref) * 35)
+        ), use_container_width=True)
 
-        # PREDIKCE
+        # C) PREDIKCE
         avg_last_5 = last_5['Hodnota'].mean() if not last_5.empty else avg_season
         predikce_val = (avg_season + avg_last_5) / 2
         
-        style_box = "background-color: #2b3035; padding: 20px; border-radius: 12px; color: white; text-align: center; margin-top: 20px;"
+        style_box = (
+            "background-color: #2b3035; padding: 20px; border-radius: 12px; "
+            "color: white; text-align: center; margin-top: 20px;"
+        )
         
         st.markdown(f"""
         <div style="{style_box}">
-            <div style="font-size: 0.9rem; color: #aaa; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">
+            <div style="font-size: 0.9rem; color: #aaa; text-transform: uppercase; 
+                        margin-bottom: 10px; letter-spacing: 1px;">
                 🔮 Predikce pro další zápas ({metrika_ref})
             </div>
-            <div style="display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #444; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-around; align-items: center; 
+                        border-top: 1px solid #444; padding-top: 15px;">
                 <div>
                     <div style="font-size: 0.7rem; color: #888;">PRŮMĚR SEZÓNA</div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #ccc;">{round(avg_season, 1)}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #ccc;">
+                        {round(avg_season, 1)}
+                    </div>
                 </div>
                 <div>
                     <div style="font-size: 0.7rem; color: #888;">FORMA (5)</div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #ccc;">{round(avg_last_5, 1)}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #ccc;">
+                        {round(avg_last_5, 1)}
+                    </div>
                 </div>
                 <div>
                     <div style="font-size: 0.7rem; color: #4dabf7;">ODHAD MODELU</div>
-                    <div style="font-size: 1.8rem; font-weight: bold; color: #fff;">{round(predikce_val, 1)}</div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #fff;">
+                        {round(predikce_val, 1)}
+                    </div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-# --- 6. SIMULÁTOR ZÁPASŮ ---
+
+
+        # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
     st.subheader("Analýza a predikce střetnutí")
-
+    
     # Session state pro výběr týmů
-    if 't1_pick' not in st.session_state: 
+    if 't1_pick' not in st.session_state:
         st.session_state.t1_pick = týmy_seznam[0]
-    if 't2_pick' not in st.session_state: 
+    if 't2_pick' not in st.session_state:
         st.session_state.t2_pick = týmy_seznam[1]
+    
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+        with st.popover(f"🏠 Domácí: {st.session_state.t1_pick}", use_container_width=True):
+            st.radio("Vyber domácí:", týmy_seznam, key="t1_pick")
+    with col_t2:
+        with st.popover(f"🚀 Hosté: {st.session_state.t2_pick}", use_container_width=True):
+            st.radio("Vyber hosty:", týmy_seznam, key="t2_pick")
+    
+    t1, t2 = st.session_state.t1_pick, st.session_state.t2_pick
 
-    c1, c2, c3 = st.columns([1.5, 1.5, 1])
-    with c1:
-        st.selectbox("Domácí tým", týmy_seznam, key="t1_pick")
-    with c2:
-        st.selectbox("Hostující tým", týmy_seznam, key="t2_pick")
-    with c3:
-        metrika_sim = st.radio("Metrika", ["Fauly", "Žluté karty", "Rohy"])
-
-    team_home = st.session_state.t1_pick
-    team_away = st.session_state.t2_pick
-
-    if team_home == team_away:
+    if t1 == t2:
         st.warning("Vyber prosím dva různé týmy.")
-    else:
-        # Mapování sloupců stejné jako v Týmových statistikách
-        map_metrics = {
-            "Žluté karty": {"h": "HY", "a": "AY", "label": "Žluté karty"},
-            "Fauly": {"h": "HF", "a": "AF", "label": "Fauly"},
-            "Rohy": {"h": "HC", "a": "AC", "label": "Rohy"}
-        }
+        st.stop()
 
-        # Predikce pro jednotlivé týmy (samostatně)
-        h_pred_pro, h_pred_proti, h_avg_pro, h_avg_proti, h_last5_pro, h_last5_proti = compute_predictions_for_team(
-            team_home, metrika_sim, df_hist, map_metrics
-        )
-        a_pred_pro, a_pred_proti, a_avg_pro, a_avg_proti, a_last5_pro, a_last5_proti = compute_predictions_for_team(
-            team_away, metrika_sim, df_hist, map_metrics
-        )
+    # Úprava rozhodčích (Příjmení Jméno)
+    original_refs = df_hist['Referee'].unique()
+    ref_mapping = {}
+    for r in original_refs:
+        if isinstance(r, str) and " " in r:
+            parts = r.split(" ")
+            formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
+            ref_mapping[formatted] = r
+        else:
+            ref_mapping[r] = r
+    
+    ref_display_list = sorted(ref_mapping.keys())
+    if 'ref_display_pick' not in st.session_state:
+        st.session_state.ref_display_pick = ref_display_list[0]
+    
+    with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_display_pick}", use_container_width=True):
+        st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
+    
+    vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick)
 
-        # Kombinace pro konkrétní zápas:
-        # Domácí = průměr (jeho "pro" + soupeřovo "proti")
-        # Hosté  = průměr (jejich "pro" + domácí "proti")
-        home_expected = (h_pred_pro + a_pred_proti) / 2
-        away_expected = (a_pred_pro + h_pred_proti) / 2
+    # --- PŮVODNÍ FUNKCE: VÝPOČET DLE SÍLY SOUPEŘE PRO GÓLY ---
+    def ziskej_stats_sila(tym, role, sila_soupere, sloupec):
+        if role == 'Home':
+            z = df_hist[df_hist['HomeTeam'] == tym].copy()
+            z['Sila_Soupere'] = z['AwayTeam'].apply(urci_silu)
+        else:
+            z = df_hist[df_hist['AwayTeam'] == tym].copy()
+            z['Sila_Soupere'] = z['HomeTeam'].apply(urci_silu)
+        
+        res = z[z['Sila_Soupere'] == sila_soupere][sloupec]
+        if not res.empty:
+            return res.mean()
+        # fallback = průměrné hodnoty bez ohledu na sílu soupeře
+        return df_hist[df_hist[role + 'Team'] == tym][sloupec].mean()
 
-        # Zobrazení head-to-head boxu
-        style_box_match = "background-color: #2b3035; padding: 20px; border-radius: 12px; color: white; margin-top: 10px;"
+    # --- 1. GÓLY (xG) – PŮVODNÍ MODEL + WHOSCORED KOREKCE (A3 HYBRID) ---
+    sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
 
-        col_h, col_mid, col_a = st.columns([3, 1, 3])
-        with col_h:
-            st.markdown(f"""
-            <div style="{style_box_match}">
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase; margin-bottom: 6px;">DOMÁCÍ</div>
-                <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 6px;">{team_home}</div>
-                <div style="font-size: 0.8rem; color: #4dabf7; margin-bottom: 4px;">Očekávané {metrika_sim.lower()}</div>
-                <div style="font-size: 2rem; font-weight: bold;">{round(home_expected, 1)}</div>
-                <div style="font-size: 0.6rem; color: #aaa; margin-top: 8px;">
-                    Sezóna: {round(h_avg_pro, 1)} | Forma 5: {round(h_last5_pro, 1)}
-                </div>
+    # původní Poisson lambdy
+    mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') + ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
+    mu_h_raw = (ziskej_stats_sila(t2, 'Away', sila_t1, 'FTAG') + ziskej_stats_sila(t1, 'Home', sila_t2, 'FTAG')) / 2
+
+    # korekce z WhoScored (xG / Goals) – pokud Goals > 0, jinak faktor 1
+    ws_t1 = get_ws_metrics(t1)
+    ws_t2 = get_ws_metrics(t2)
+
+    faktor_t1 = (ws_t1["xg"] / ws_t1["goals"]) if ws_t1["goals"] > 0 else 1.0
+    faktor_t2 = (ws_t2["xg"] / ws_t2["goals"]) if ws_t2["goals"] > 0 else 1.0
+
+    # hybridní xG
+    mu_d = mu_d_raw * faktor_t1
+    mu_h = mu_h_raw * faktor_t2
+
+    celkem_goly = mu_d + mu_h
+
+    # --- 2. FAULY / ROHY / KARTY – NOVÝ MODEL (A3-FULL) + ROZHODČÍ ---
+    # Mapování metrik – stejné jako v Týmových statistikách
+    map_metrics_sim = {
+        "Žluté karty": {"h": "HY", "a": "AY", "label": "Žluté karty"},
+        "Fauly": {"h": "HF", "a": "AF", "label": "Fauly"},
+        "Rohy": {"h": "HC", "a": "AC", "label": "Rohy"}
+    }
+
+    # FAULY – nové predikce pro oba týmy + faktor rozhodčího
+    h_fauly_pro, _, h_fauly_avg, _, h_fauly_last5, _ = compute_predictions_for_team(
+        t1, "Fauly", df_hist, map_metrics_sim
+    )
+    a_fauly_pro, _, a_fauly_avg, _, a_fauly_last5, _ = compute_predictions_for_team(
+        t2, "Fauly", df_hist, map_metrics_sim
+    )
+
+    ligovy_avg_f = (df_hist['HF'] + df_hist['AF']).mean()
+    ref_data = df_hist[df_hist['Referee'] == vybrany_ref]
+    ref_avg_f = ref_data[['HF', 'AF']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_f
+    ref_faktor = ref_avg_f / ligovy_avg_f if ligovy_avg_f > 0 else 1.0
+
+    ocek_fauly = (h_fauly_pro + a_fauly_pro) * ref_faktor
+
+    # ROHY – nové predikce pro oba týmy
+    h_rohy_pro, _, h_rohy_avg, _, h_rohy_last5, _ = compute_predictions_for_team(
+        t1, "Rohy", df_hist, map_metrics_sim
+    )
+    a_rohy_pro, _, a_rohy_avg, _, a_rohy_last5, _ = compute_predictions_for_team(
+        t2, "Rohy", df_hist, map_metrics_sim
+    )
+
+    ocek_rohy = h_rohy_pro + a_rohy_pro
+
+    # KARTY – nové predikce pro oba týmy + vliv rozhodčího
+    h_zk_pro, _, h_zk_avg, _, h_zk_last5, _ = compute_predictions_for_team(
+        t1, "Žluté karty", df_hist, map_metrics_sim
+    )
+    a_zk_pro, _, a_zk_avg, _, a_zk_last5, _ = compute_predictions_for_team(
+        t2, "Žluté karty", df_hist, map_metrics_sim
+    )
+
+    # průměr žlutých v lize na zápas
+    ligovy_avg_zk = (df_hist['HY'] + df_hist['AY']).mean()
+    ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
+
+    # kombinace: týmové predikce × rozhodčí jako multiplikátor
+    base_karty = (h_zk_pro + a_zk_pro) / 2 if (h_zk_pro + a_zk_pro) > 0 else ligovy_avg_zk
+    ref_zk_factor = ref_zk_avg / ligovy_avg_zk if ligovy_avg_zk > 0 else 1.0
+    ocek_karty = base_karty * ref_zk_factor
+
+    # --- 3. VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
+    p_1, p_x, p_2 = 0, 0, 0
+    for i in range(10):  # simulujeme skóre 0-9 gólů
+        for j in range(10):
+            p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
+            if i > j:
+                p_1 += p
+            elif i < j:
+                p_2 += p
+            else:
+                p_x += p
+    
+    p1_pct = round(p_1 * 100)
+    px_pct = round(p_x * 100)
+    p2_pct = 100 - p1_pct - px_pct
+
+    prob_over_2_5 = sum(
+        poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
+        for i in range(10) for j in range(10) if i + j > 2
+    )
+
+    # --- VIZUALIZACE ZÁPASU (LOGA + VS) ---
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <div style="text-align: center; width: 30%;">
+            <img src="{LOGA_TYMU.get(t1)}" width="80"><br>
+            <span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t1.upper()}</span>
+        </div>
+        <div style="text-align: center; width: 40%;">
+            <h1 style="margin: 0; font-size: 2.5rem; color: #555;">VS</h1>
+        </div>
+        <div style="text-align: center; width: 30%;">
+            <img src="{LOGA_TYMU.get(t2)}" width="100"><br>
+            <span style="color: gray; font-size: 0.8rem; font-weight: bold;">{t2.upper()}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- FORMA TÝMŮ ---
+    f1 = ziskej_formu(t1, df_hist)[::-1]
+    f2 = ziskej_formu(t2, df_hist)[::-1]
+    
+    forma_html = f"""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 0.85rem; font-weight: bold; color: #666; margin-bottom: 5px;">AKTUÁLNÍ FORMA</div>
+        <div style="display: flex; justify-content: center; gap: 30px; font-size: 1.1rem; letter-spacing: 2px;">
+            <div>{f1}</div>
+            <div style="color: #ccc; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center;">VS</div>
+            <div>{f2}</div>
+        </div>
+    </div>
+    """
+    st.markdown(forma_html, unsafe_allow_html=True)
+
+    # --- BOXY: xG / SKÓRE / ROHY / FAULY / KARTY ---
+    style_box = "background-color: #2b3035; padding: 15px; border-radius: 12px; color: white; margin-bottom: 5px; text-align: center;"
+
+    # HORNÍ BOX (Góly a skóre)
+    st.markdown(f"""
+    <div style="{style_box} border-bottom: 1px solid #444; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Domácí</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #4dabf7;">{round(mu_d, 2)}</div>
             </div>
-            """, unsafe_allow_html=True)
-        with col_mid:
-            st.markdown("<div style='height:100%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;'>vs</div>", unsafe_allow_html=True)
-        with col_a:
-            st.markdown(f"""
-            <div style="{style_box_match}">
-                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase; margin-bottom: 6px; text-align:right;">HOSTÉ</div>
-                <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; text-align:right;'>{team_away}</div>
-                <div style="font-size: 0.8rem; color: #ff6b6b; margin-bottom: 4px; text-align:right;">Očekávané {metrika_sim.lower()}</div>
-                <div style="font-size: 2rem; font-weight: bold; text-align:right;'>{round(away_expected, 1)}</div>
-                <div style="font-size: 0.6rem; color: #aaa; margin-top: 8px; text-align:right;">
-                    Sezóna: {round(a_avg_pro, 1)} | Forma 5: {round(a_last5_pro, 1)}
-                </div>
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">Predikce skóre</div>
+                <div style="font-size: 2rem; font-weight: bold;">{round(mu_d)} : {round(mu_h)}</div>
             </div>
-            """, unsafe_allow_html=True)
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">xG Hosté</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #ff6b6b;">{round(mu_h, 2)}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        # Malý souhrnný text
-        st.markdown(
-            f"<div style='margin-top:15px; font-size:0.85rem; color:#888;'>"
-            f"Model kombinuje sezónní průměry, formu posledních 5 zápasů a WhoScored statistiky "
-            f"(fauly, obranné zákroky, střely, dribbles) pro odhad {metrika_sim.lower()} v konkrétním zápase."
-            f"</div>",
-            unsafe_allow_html=True
-        )
+    # DOLNÍ BOX (Rohy, Fauly, Karty)
+    st.markdown(f"""
+    <div style="{style_box} border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 10px;">
+        <div style="display: flex; justify-content: space-around; align-items: center;">
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🚩 Rohy</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_rohy, 1)}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">⚖️ Fauly</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_fauly, 1)}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: #aaa; text-transform: uppercase;">🟨 Karty</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">{round(ocek_karty, 1)}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- VIZUÁLNÍ PRUH 1-X-2 ---
+    st.markdown(f"""
+    <div style="margin-top: -5px; margin-bottom: 25px;">
+        <div style="display: flex; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444;">
+            <div style="width: {p1_pct}%; background-color: #4dabf7;" title="Výhra domácích"></div>
+            <div style="width: {px_pct}%; background-color: #666;" title="Remíza"></div>
+            <div style="width: {p2_pct}%; background-color: #ff6b6b;" title="Výhra hostů"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; padding-top: 5px; font-weight: bold;">
+            <span>{t1}: {p1_pct}%</span>
+            <span>REMÍZA: {px_pct}%</span>
+            <span>{t2}: {p2_pct}%</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- TIPY ---
+    st.subheader("💡 Doporučené tipy")
+    tipy = []
+    if celkem_goly > 3.0:
+        tipy.append("🔥 **Góly:** Over 2.5")
+    if ocek_rohy > 11.0:
+        tipy.append("🚩 **Rohy:** Over 10.5")
+    if ocek_fauly > 24:
+        tipy.append(f"⚠️ **Fauly:** Over 23.5 (Ref faktor: {round(ref_faktor, 2)})")
+    if ocek_karty > 4.5:
+        tipy.append("🟨 **Karty:** Over 3.5")
+    
+    for t in tipy:
+        st.info(t)
+
+    # --- VALUE BETS ---
+    st.write("---")
+    st.subheader("💰 Vyhledávač Value Bets")
+    st.caption("Porovnej kurzy sázkové kanceláře s matematickým modelem")
+
+    c_odds1, c_odds2, c_odds3 = st.columns(3)
+    odd_1 = c_odds1.number_input(f"Kurz na {t1}", min_value=1.01, value=2.00, step=0.05)
+    odd_x = c_odds2.number_input("Kurz na Remízu", min_value=1.01, value=3.20, step=0.05)
+    odd_2 = c_odds3.number_input(f"Kurz na {t2}", min_value=1.01, value=3.50, step=0.05)
+    
+    odd_over = st.number_input("Kurz na Over 2.5 gólu", min_value=1.01, value=1.85, step=0.05)
+
+    if st.button("Analyzovat výhodnost kurzů", use_container_width=True):
+        def check_value(prob, odd, label):
+            value = (prob * odd) - 1
+            fair_kurz = 1/prob if prob > 0 else 0
+            if value > 0.05:
+                st.success(f"✅ **{label}**: Hodnota {round(value*100, 1)}% (Fair kurz: {round(fair_kurz, 2)})")
+            elif value < -0.15:
+                st.error(f"❌ **{label}**: Nevýhodné (Fair kurz: {round(fair_kurz, 2)})")
+            else:
+                st.warning(f"⚖️ **{label}**: Bez výrazné hodnoty (Fair kurz: {round(fair_kurz, 2)})")
+
+        check_value(p_1, odd_1, f"Výhra {t1}")
+        check_value(p_x, odd_x, "Remíza")
+        check_value(p_2, odd_2, f"Výhra {t2}")
+        check_value(prob_over_2_5, odd_over, "Over 2.5 gólu")
+
