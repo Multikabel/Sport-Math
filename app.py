@@ -178,32 +178,32 @@ def compute_predictions_for_team(team, metrika_team, df_hist, map_metrics):
     # --- ŽLUTÉ KARTY ---
     if metrika_team == "Žluté karty":
         pred_zk_pro = (
-            0.35 * avg_pro +
-            0.25 * avg_last_5_pro +
-            0.20 * ws_fouls +
-            0.20 * ((ws_tackles + ws_inter) / 2)
+            0.45 * avg_pro +
+            0.35 * avg_last_5_pro +
+            0.10 * ws_fouls +
+            0.10 * ((ws_tackles + ws_inter) / 2)
         )
         pred_zk_proti = (
-            0.35 * avg_proti +
-            0.25 * avg_last_5_proti +
-            0.20 * ws_fouled +
-            0.20 * ((ws_tackles + ws_inter) / 2)
+            0.45 * avg_proti +
+            0.35 * avg_last_5_proti +
+            0.10 * ws_fouled +
+            0.10 * ((ws_tackles + ws_inter) / 2)
         )
         return pred_zk_pro, pred_zk_proti, avg_pro, avg_proti, avg_last_5_pro, avg_last_5_proti
 
     # --- ROHY ---
     if metrika_team == "Rohy":
         pred_rohy_pro = (
-            0.35 * avg_pro +
-            0.25 * avg_last_5_pro +
-            0.20 * ws_shots +
-            0.20 * ws_dribbles
+            0.50 * avg_pro +
+            0.30 * avg_last_5_pro +
+            0.10 * ws_shots +
+            0.10 * ws_dribbles
         )
         pred_rohy_proti = (
-            0.35 * avg_proti +
-            0.25 * avg_last_5_proti +
-            0.20 * ws_shots +
-            0.20 * ws_dribbles
+            0.50 * avg_proti +
+            0.30 * avg_last_5_proti +
+            0.10 * ws_shots +
+            0.10 * ws_dribbles
         )
         return pred_rohy_pro, pred_rohy_proti, avg_pro, avg_proti, avg_last_5_pro, avg_last_5_proti
 
