@@ -81,7 +81,6 @@ TEAM_NAME_MAP = {
     "Tottenham": "Tottenham",
     "West Ham": "West Ham",
     "Wolves": "Wolves",
-    TEAM_NAME_MAP.update({
     # La Liga
     "Real Madrid": "Real Madrid",
     "Barcelona": "Barcelona",
@@ -125,7 +124,6 @@ TEAM_NAME_MAP = {
     "Lecce": "Lecce",
     "Parma": "Parma",
     "Venezia": "Venezia"
-})
 }
 
 # Převod názvů z WhoScored na názvy ve football-data
