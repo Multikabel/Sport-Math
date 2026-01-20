@@ -911,6 +911,7 @@ for i in range(10):
             p_x += p
 
 
+
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
 
@@ -948,11 +949,12 @@ elif volba == "Simulátor zápasů":
         st.warning("Vyber prosím dva různé týmy.")
         st.stop()
 
-    # --- ROZHODČÍ PRO SIMULÁTOR (BEZPEČNÉ I PRO CSV BEZ ROZHODČÍCH) ---
+    # --- ROZHODČÍ PRO SIMULÁTOR (BEZPEČNÉ I PRO LIGY BEZ ROZHODČÍCH) ---
     has_referees = ("Referee" in df_refs_sim.columns) and df_refs_sim["Referee"].notna().any()
 
     vybrany_ref = None
-    ref_faktor = 1.0  # default – pokud nejsou rozhodčí, použijeme ligový průměr bez multiplikace
+    ref_faktor = 1.0
+    ref_zk_factor = 1.0
 
     if has_referees:
         original_refs = df_refs_sim["Referee"].dropna().unique()
@@ -967,6 +969,7 @@ elif volba == "Simulátor zápasů":
                 ref_mapping[r] = r
 
         ref_display_list = sorted(ref_mapping.keys())
+
         if ref_display_list:
             if 'ref_display_pick' not in st.session_state:
                 st.session_state.ref_display_pick = ref_display_list[0]
@@ -975,11 +978,6 @@ elif volba == "Simulátor zápasů":
                 st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
 
             vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick)
-        else:
-            vybrany_ref = None
-    else:
-        # žádný sloupec Referee – simulátor pojede bez výběru rozhodčího
-        vybrany_ref = None
 
     # --- FUNKCE: VÝPOČET DLE SÍLY SOUPEŘE PRO GÓLY ---
     def ziskej_stats_sila(tym, role, sila_soupere, sloupec):
@@ -993,15 +991,14 @@ elif volba == "Simulátor zápasů":
         res = z[z['Sila_Soupere'] == sila_soupere][sloupec]
         if not res.empty:
             return res.mean()
-        # fallback = průměrné hodnoty bez ohledu na sílu soupeře
         return df_hist[df_hist[role + 'Team'] == tym][sloupec].mean()
 
-    # --- 1. GÓLY (xG) – PŮVODNÍ MODEL + WHOSCORED KOREKCE (A3 HYBRID) ---
+    # --- 1. GÓLY (xG) – HYBRIDNÍ MODEL ---
     sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
 
-    mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') + 
+    mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') +
                 ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
-    mu_h_raw = (ziskej_stats_sila(t2, 'Away', sila_t1, 'FTAG') + 
+    mu_h_raw = (ziskej_stats_sila(t2, 'Away', sila_t1, 'FTAG') +
                 ziskej_stats_sila(t1, 'Home', sila_t2, 'FTAG')) / 2
 
     ws_t1 = get_ws_metrics(t1)
@@ -1015,27 +1012,22 @@ elif volba == "Simulátor zápasů":
 
     celkem_goly = mu_d + mu_h
 
-    # --- 2. FAULY / ROHY / KARTY – NOVÝ MODEL (A3-FULL) + ROZHODČÍ ---
+    # --- 2. FAULY / ROHY / KARTY ---
     map_metrics_sim = {
-        "Žluté karty": {"h": "HY", "a": "AY", "label": "Žluté karty"},
-        "Fauly": {"h": "HF", "a": "AF", "label": "Fauly"},
-        "Rohy": {"h": "HC", "a": "AC", "label": "Rohy"}
+        "Žluté karty": {"h": "HY", "a": "AY"},
+        "Fauly": {"h": "HF", "a": "AF"},
+        "Rohy": {"h": "HC", "a": "AC"}
     }
 
-    # FAULY – týmové predikce
-    h_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(
-        t1, "Fauly", df_hist, map_metrics_sim
-    )
-    a_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(
-        t2, "Fauly", df_hist, map_metrics_sim
-    )
+    # FAULY
+    h_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Fauly", df_hist, map_metrics_sim)
+    a_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Fauly", df_hist, map_metrics_sim)
 
     ligovy_avg_f = (df_refs_sim['HF'] + df_refs_sim['AF']).mean()
 
     if has_referees and vybrany_ref is not None:
         ref_data = df_refs_sim[df_refs_sim['Referee'] == vybrany_ref]
     else:
-        # pokud nejsou rozhodčí, použijeme celý dataset jako základ
         ref_data = df_refs_sim
 
     ref_avg_f = ref_data[['HF', 'AF']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_f
@@ -1043,23 +1035,15 @@ elif volba == "Simulátor zápasů":
 
     ocek_fauly = (h_fauly_pro + a_fauly_pro) * ref_faktor
 
-    # ROHY – týmové predikce
-    h_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(
-        t1, "Rohy", df_hist, map_metrics_sim
-    )
-    a_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(
-        t2, "Rohy", df_hist, map_metrics_sim
-    )
+    # ROHY
+    h_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Rohy", df_hist, map_metrics_sim)
+    a_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Rohy", df_hist, map_metrics_sim)
 
     ocek_rohy = h_rohy_pro + a_rohy_pro
 
-    # KARTY – týmové predikce + vliv rozhodčího
-    h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(
-        t1, "Žluté karty", df_hist, map_metrics_sim
-    )
-    a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(
-        t2, "Žluté karty", df_hist, map_metrics_sim
-    )
+    # KARTY
+    h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Žluté karty", df_hist, map_metrics_sim)
+    a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Žluté karty", df_hist, map_metrics_sim)
 
     ligovy_avg_zk = (df_refs_sim['HY'] + df_refs_sim['AY']).mean()
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
@@ -1068,7 +1052,7 @@ elif volba == "Simulátor zápasů":
     ref_zk_factor = ref_zk_avg / ligovy_avg_zk if ligovy_avg_zk > 0 else 1.0
     ocek_karty = base_karty * ref_zk_factor
 
-    # --- 3. VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
+    # --- 3. POISSON ---
     p_1, p_x, p_2 = 0, 0, 0
     for i in range(10):
         for j in range(10):
@@ -1079,7 +1063,7 @@ elif volba == "Simulátor zápasů":
                 p_2 += p
             else:
                 p_x += p
-    
+
     p1_pct = round(p_1 * 100)
     px_pct = round(p_x * 100)
     p2_pct = 100 - p1_pct - px_pct
@@ -1089,8 +1073,7 @@ elif volba == "Simulátor zápasů":
         for i in range(10) for j in range(10) if i + j > 2
     )
 
-
-    # --- VIZUALIZACE ZÁPASU ---
+    # --- VIZUALIZACE ZÁPASU (LOGA + VS) ---
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
         <div style="text-align: center; width: 30%;">
@@ -1106,6 +1089,7 @@ elif volba == "Simulátor zápasů":
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 
     # --- FORMA ---
     f1 = ziskej_formu(t1, df_hist)[::-1]
