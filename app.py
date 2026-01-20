@@ -55,29 +55,6 @@ if df_hist is None:
     st.error("Nepodařilo se načíst data.")
     st.stop()
 
-# --- WHO SCORED DATA ---
-# Očekává se lokální soubor "whoscored.csv" se strukturou, kterou jsi poslal
-# --- WHO SCORED DATA ---
-ws_map = {
-    "Premier League": "whoscored.csv",
-    "La Liga": "laliga.csv",
-    "Serie A": "seriea.csv"
-}
-
-# WhoScored data používáme pouze pro Premier League
-if liga == "Premier League":
-    df_ws = pd.read_csv(ws_map[liga], encoding="utf-8")
-    df_ws.columns = df_ws.columns.str.strip()
-    df_ws["TeamFD"] = df_ws["Team"].map(TEAM_NAME_MAP)
-    WS_MAP = df_ws.set_index("TeamFD").to_dict(orient="index")
-else:
-    df_ws = None
-    WS_MAP = {}
-
-
-
-df_ws = pd.read_csv(ws_map[liga], encoding="utf-8")
-df_ws.columns = df_ws.columns.str.strip()
 
 # Mapování názvů týmů mezi WhoScored a football-data
 TEAM_NAME_MAP = {
@@ -145,6 +122,23 @@ TEAM_NAME_MAP = {
     "Parma": "Parma",
     "Venezia": "Venezia"
 }
+
+# --- WHO SCORED DATA ---
+ws_map = {
+    "Premier League": "whoscored.csv",
+    "La Liga": "laliga.csv",
+    "Serie A": "seriea.csv"
+}
+
+# WhoScored data používáme pouze pro Premier League
+if liga == "Premier League":
+    df_ws = pd.read_csv(ws_map[liga], encoding="utf-8")
+    df_ws.columns = df_ws.columns.str.strip()
+    df_ws["TeamFD"] = df_ws["Team"].map(TEAM_NAME_MAP)
+    WS_MAP = df_ws.set_index("TeamFD").to_dict(orient="index")
+else:
+    df_ws = None
+    WS_MAP = {}
 
 # Převod názvů z WhoScored na názvy ve football-data
 df_ws["TeamFD"] = df_ws["Team"].map(TEAM_NAME_MAP)
