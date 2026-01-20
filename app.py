@@ -126,8 +126,8 @@ TEAM_NAME_MAP = {
 # --- WHO SCORED DATA ---
 ws_map = {
     "Premier League": "whoscored.csv",
-    "La Liga": "laliga.csv",
-    "Serie A": "seriea.csv"
+    "La Liga": None,
+    "Serie A": None
 }
 
 # WhoScored data používáme pouze pro Premier League
@@ -144,7 +144,7 @@ else:
 def get_ws_metrics(team_fd_name):
     """
     Vrátí metriky z WhoScored pro daný tým (ve jménu football-data),
-    pokud nejsou, vrací nuly.
+    pokud nejsou dostupné (La Liga, Serie A), vrací nuly.
     """
 
     # Pokud nejsou WhoScored data (La Liga, Serie A)
@@ -160,7 +160,7 @@ def get_ws_metrics(team_fd_name):
             "goals": 0.0
         }
 
-    ws = WS_MAP.get(team_fd_name, None)
+    ws = WS_MAP.get(team_fd_name)
     if ws is None:
         return {
             "fouls": 0.0,
@@ -557,6 +557,11 @@ elif volba == "Týmové statistiky":
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
 
+    # Pokud liga nemá rozhodčí v datasetu
+    if liga != "Premier League":
+        st.info("Tato liga nemá dostupná data o rozhodčích.")
+        st.stop()
+
     st.markdown(f"### Analýza rozhodčích – {liga}")
 
     # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
@@ -783,6 +788,12 @@ elif volba == "Simulátor zápasů":
     elif liga == "Serie A":
         df_refs_sim = pd.read_csv("referees_seriea.csv")
 
+        # Pokud liga nemá rozhodčí
+if "Referee" not in df_refs_sim.columns or df_refs_sim["Referee"].dropna().empty:
+    vybrany_ref = None
+else:
+    # původní logika výběru rozhodčího
+
     df_refs_sim.columns = df_refs_sim.columns.str.strip()
     if "Date" in df_refs_sim.columns:
         df_refs_sim["Date"] = pd.to_datetime(df_refs_sim["Date"], errors="coerce")
@@ -899,6 +910,168 @@ elif volba == "Simulátor zápasů":
     # --- 3. POISSON ---
     p_1, p_x, p_2 = 0, 0, 0
     for i in range(10):
+
+
+# --- 6. SIMULÁTOR ZÁPASŮ ---
+elif volba == "Simulátor zápasů":
+
+    # --- NAČTENÍ DAT PRO ROZHODČÍ / LIGOVÉ STATISTIKY ---
+    if liga == "Premier League":
+        df_refs_sim = df_hist.copy()
+    elif liga == "La Liga":
+        df_refs_sim = pd.read_csv("referees_laliga.csv")
+    elif liga == "Serie A":
+        df_refs_sim = pd.read_csv("referees_seriea.csv")
+
+    df_refs_sim.columns = df_refs_sim.columns.str.strip()
+    if "Date" in df_refs_sim.columns:
+        df_refs_sim["Date"] = pd.to_datetime(df_refs_sim["Date"], errors="coerce")
+
+    st.subheader("Analýza a predikce střetnutí")
+    
+    # --- VÝBĚR TÝMŮ ---
+    if 't1_pick' not in st.session_state:
+        st.session_state.t1_pick = týmy_seznam[0]
+    if 't2_pick' not in st.session_state:
+        st.session_state.t2_pick = týmy_seznam[1]
+    
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+        with st.popover(f"🏠 Domácí: {st.session_state.t1_pick}", use_container_width=True):
+            st.radio("Vyber domácí:", týmy_seznam, key="t1_pick")
+    with col_t2:
+        with st.popover(f"🚀 Hosté: {st.session_state.t2_pick}", use_container_width=True):
+            st.radio("Vyber hosty:", týmy_seznam, key="t2_pick")
+    
+    t1, t2 = st.session_state.t1_pick, st.session_state.t2_pick
+
+    if t1 == t2:
+        st.warning("Vyber prosím dva různé týmy.")
+        st.stop()
+
+    # --- ROZHODČÍ PRO SIMULÁTOR (BEZPEČNÉ I PRO CSV BEZ ROZHODČÍCH) ---
+    has_referees = ("Referee" in df_refs_sim.columns) and df_refs_sim["Referee"].notna().any()
+
+    vybrany_ref = None
+    ref_faktor = 1.0  # default – pokud nejsou rozhodčí, použijeme ligový průměr bez multiplikace
+
+    if has_referees:
+        original_refs = df_refs_sim["Referee"].dropna().unique()
+
+        ref_mapping = {}
+        for r in original_refs:
+            if isinstance(r, str) and " " in r:
+                parts = r.split(" ")
+                formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
+                ref_mapping[formatted] = r
+            else:
+                ref_mapping[r] = r
+
+        ref_display_list = sorted(ref_mapping.keys())
+        if ref_display_list:
+            if 'ref_display_pick' not in st.session_state:
+                st.session_state.ref_display_pick = ref_display_list[0]
+
+            with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_display_pick}", use_container_width=True):
+                st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
+
+            vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick)
+        else:
+            vybrany_ref = None
+    else:
+        # žádný sloupec Referee – simulátor pojede bez výběru rozhodčího
+        vybrany_ref = None
+
+    # --- FUNKCE: VÝPOČET DLE SÍLY SOUPEŘE PRO GÓLY ---
+    def ziskej_stats_sila(tym, role, sila_soupere, sloupec):
+        if role == 'Home':
+            z = df_hist[df_hist['HomeTeam'] == tym].copy()
+            z['Sila_Soupere'] = z['AwayTeam'].apply(urci_silu)
+        else:
+            z = df_hist[df_hist['AwayTeam'] == tym].copy()
+            z['Sila_Soupere'] = z['HomeTeam'].apply(urci_silu)
+        
+        res = z[z['Sila_Soupere'] == sila_soupere][sloupec]
+        if not res.empty:
+            return res.mean()
+        # fallback = průměrné hodnoty bez ohledu na sílu soupeře
+        return df_hist[df_hist[role + 'Team'] == tym][sloupec].mean()
+
+    # --- 1. GÓLY (xG) – PŮVODNÍ MODEL + WHOSCORED KOREKCE (A3 HYBRID) ---
+    sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
+
+    mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') + 
+                ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
+    mu_h_raw = (ziskej_stats_sila(t2, 'Away', sila_t1, 'FTAG') + 
+                ziskej_stats_sila(t1, 'Home', sila_t2, 'FTAG')) / 2
+
+    ws_t1 = get_ws_metrics(t1)
+    ws_t2 = get_ws_metrics(t2)
+
+    faktor_t1 = (ws_t1["xg"] / ws_t1["goals"]) if ws_t1["goals"] > 0 else 1.0
+    faktor_t2 = (ws_t2["xg"] / ws_t2["goals"]) if ws_t2["goals"] > 0 else 1.0
+
+    mu_d = mu_d_raw * faktor_t1
+    mu_h = mu_h_raw * faktor_t2
+
+    celkem_goly = mu_d + mu_h
+
+    # --- 2. FAULY / ROHY / KARTY – NOVÝ MODEL (A3-FULL) + ROZHODČÍ ---
+    map_metrics_sim = {
+        "Žluté karty": {"h": "HY", "a": "AY", "label": "Žluté karty"},
+        "Fauly": {"h": "HF", "a": "AF", "label": "Fauly"},
+        "Rohy": {"h": "HC", "a": "AC", "label": "Rohy"}
+    }
+
+    # FAULY – týmové predikce
+    h_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(
+        t1, "Fauly", df_hist, map_metrics_sim
+    )
+    a_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(
+        t2, "Fauly", df_hist, map_metrics_sim
+    )
+
+    ligovy_avg_f = (df_refs_sim['HF'] + df_refs_sim['AF']).mean()
+
+    if has_referees and vybrany_ref is not None:
+        ref_data = df_refs_sim[df_refs_sim['Referee'] == vybrany_ref]
+    else:
+        # pokud nejsou rozhodčí, použijeme celý dataset jako základ
+        ref_data = df_refs_sim
+
+    ref_avg_f = ref_data[['HF', 'AF']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_f
+    ref_faktor = ref_avg_f / ligovy_avg_f if ligovy_avg_f > 0 else 1.0
+
+    ocek_fauly = (h_fauly_pro + a_fauly_pro) * ref_faktor
+
+    # ROHY – týmové predikce
+    h_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(
+        t1, "Rohy", df_hist, map_metrics_sim
+    )
+    a_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(
+        t2, "Rohy", df_hist, map_metrics_sim
+    )
+
+    ocek_rohy = h_rohy_pro + a_rohy_pro
+
+    # KARTY – týmové predikce + vliv rozhodčího
+    h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(
+        t1, "Žluté karty", df_hist, map_metrics_sim
+    )
+    a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(
+        t2, "Žluté karty", df_hist, map_metrics_sim
+    )
+
+    ligovy_avg_zk = (df_refs_sim['HY'] + df_refs_sim['AY']).mean()
+    ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
+
+    base_karty = (h_zk_pro + a_zk_pro) / 2 if (h_zk_pro + a_zk_pro) > 0 else ligovy_avg_zk
+    ref_zk_factor = ref_zk_avg / ligovy_avg_zk if ligovy_avg_zk > 0 else 1.0
+    ocek_karty = base_karty * ref_zk_factor
+
+    # --- 3. VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
+    p_1, p_x, p_2 = 0, 0, 0
+    for i in range(10):
         for j in range(10):
             p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
             if i > j:
@@ -916,6 +1089,7 @@ elif volba == "Simulátor zápasů":
         poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
         for i in range(10) for j in range(10) if i + j > 2
     )
+
 
     # --- VIZUALIZACE ZÁPASU ---
     st.markdown(f"""
