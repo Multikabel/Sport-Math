@@ -783,6 +783,19 @@ elif volba == "Rozhodčí":
 
         # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
+
+    # --- NAČTENÍ ROZHODČÍCH PRO SIMULÁTOR ---
+    if liga == "Premier League":
+        df_refs_sim = df_hist.copy()
+    elif liga == "La Liga":
+        df_refs_sim = pd.read_csv("referees_laliga.csv")
+    elif liga == "Serie A":
+        df_refs_sim = pd.read_csv("referees_seriea.csv")
+
+    df_refs_sim.columns = df_refs_sim.columns.str.strip()
+    if "Date" in df_refs_sim.columns:
+        df_refs_sim["Date"] = pd.to_datetime(df_refs_sim["Date"], errors="coerce")
+
     st.subheader("Analýza a predikce střetnutí")
     
     # Session state pro výběr týmů
@@ -806,7 +819,8 @@ elif volba == "Simulátor zápasů":
         st.stop()
 
     # Úprava rozhodčích (Příjmení Jméno)
-    original_refs = df_hist['Referee'].unique()
+    original_refs = df_refs_sim['Referee'].dropna().unique()
+
     ref_mapping = {}
     for r in original_refs:
         if isinstance(r, str) and " " in r:
@@ -876,8 +890,8 @@ elif volba == "Simulátor zápasů":
         t2, "Fauly", df_hist, map_metrics_sim
     )
 
-    ligovy_avg_f = (df_hist['HF'] + df_hist['AF']).mean()
-    ref_data = df_hist[df_hist['Referee'] == vybrany_ref]
+    ligovy_avg_f = (df_refs_sim['HF'] + df_refs_sim['AF']).mean()
+    ref_data = df_refs_sim[df_refs_sim['Referee'] == vybrany_ref]
     ref_avg_f = ref_data[['HF', 'AF']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_f
     ref_faktor = ref_avg_f / ligovy_avg_f if ligovy_avg_f > 0 else 1.0
 
@@ -902,7 +916,7 @@ elif volba == "Simulátor zápasů":
     )
 
     # průměr žlutých v lize na zápas
-    ligovy_avg_zk = (df_hist['HY'] + df_hist['AY']).mean()
+    ligovy_avg_zk = (df_refs_sim['HY'] + df_refs_sim['AY']).mean()
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
 
     # kombinace: týmové predikce × rozhodčí jako multiplikátor
