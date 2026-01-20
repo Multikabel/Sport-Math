@@ -781,7 +781,7 @@ elif volba == "Rozhodčí":
         </div>
         """, unsafe_allow_html=True)
 
-        # --- 6. SIMULÁTOR ZÁPASŮ ---
+ # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
 
     # --- NAČTENÍ ROZHODČÍCH PRO SIMULÁTOR ---
@@ -851,44 +851,35 @@ elif volba == "Simulátor zápasů":
         res = z[z['Sila_Soupere'] == sila_soupere][sloupec]
         if not res.empty:
             return res.mean()
-        # fallback = průměrné hodnoty bez ohledu na sílu soupeře
         return df_hist[df_hist[role + 'Team'] == tym][sloupec].mean()
 
-    # --- 1. GÓLY (xG) – PŮVODNÍ MODEL + WHOSCORED KOREKCE (A3 HYBRID) ---
+    # --- 1. GÓLY (xG) – HYBRID ---
     sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
 
-    # původní Poisson lambdy
     mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') + ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
     mu_h_raw = (ziskej_stats_sila(t2, 'Away', sila_t1, 'FTAG') + ziskej_stats_sila(t1, 'Home', sila_t2, 'FTAG')) / 2
 
-    # korekce z WhoScored (xG / Goals) – pokud Goals > 0, jinak faktor 1
     ws_t1 = get_ws_metrics(t1)
     ws_t2 = get_ws_metrics(t2)
 
     faktor_t1 = (ws_t1["xg"] / ws_t1["goals"]) if ws_t1["goals"] > 0 else 1.0
     faktor_t2 = (ws_t2["xg"] / ws_t2["goals"]) if ws_t2["goals"] > 0 else 1.0
 
-    # hybridní xG
     mu_d = mu_d_raw * faktor_t1
     mu_h = mu_h_raw * faktor_t2
 
     celkem_goly = mu_d + mu_h
 
-    # --- 2. FAULY / ROHY / KARTY – NOVÝ MODEL (A3-FULL) + ROZHODČÍ ---
-    # Mapování metrik – stejné jako v Týmových statistikách
+    # --- 2. FAULY / ROHY / KARTY ---
     map_metrics_sim = {
-        "Žluté karty": {"h": "HY", "a": "AY", "label": "Žluté karty"},
-        "Fauly": {"h": "HF", "a": "AF", "label": "Fauly"},
-        "Rohy": {"h": "HC", "a": "AC", "label": "Rohy"}
+        "Žluté karty": {"h": "HY", "a": "AY"},
+        "Fauly": {"h": "HF", "a": "AF"},
+        "Rohy": {"h": "HC", "a": "AC"}
     }
 
-    # FAULY – nové predikce pro oba týmy + faktor rozhodčího
-    h_fauly_pro, _, h_fauly_avg, _, h_fauly_last5, _ = compute_predictions_for_team(
-        t1, "Fauly", df_hist, map_metrics_sim
-    )
-    a_fauly_pro, _, a_fauly_avg, _, a_fauly_last5, _ = compute_predictions_for_team(
-        t2, "Fauly", df_hist, map_metrics_sim
-    )
+    # FAULY
+    h_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Fauly", df_hist, map_metrics_sim)
+    a_fauly_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Fauly", df_hist, map_metrics_sim)
 
     ligovy_avg_f = (df_refs_sim['HF'] + df_refs_sim['AF']).mean()
     ref_data = df_refs_sim[df_refs_sim['Referee'] == vybrany_ref]
@@ -897,36 +888,26 @@ elif volba == "Simulátor zápasů":
 
     ocek_fauly = (h_fauly_pro + a_fauly_pro) * ref_faktor
 
-    # ROHY – nové predikce pro oba týmy
-    h_rohy_pro, _, h_rohy_avg, _, h_rohy_last5, _ = compute_predictions_for_team(
-        t1, "Rohy", df_hist, map_metrics_sim
-    )
-    a_rohy_pro, _, a_rohy_avg, _, a_rohy_last5, _ = compute_predictions_for_team(
-        t2, "Rohy", df_hist, map_metrics_sim
-    )
+    # ROHY
+    h_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Rohy", df_hist, map_metrics_sim)
+    a_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Rohy", df_hist, map_metrics_sim)
 
     ocek_rohy = h_rohy_pro + a_rohy_pro
 
-    # KARTY – nové predikce pro oba týmy + vliv rozhodčího
-    h_zk_pro, _, h_zk_avg, _, h_zk_last5, _ = compute_predictions_for_team(
-        t1, "Žluté karty", df_hist, map_metrics_sim
-    )
-    a_zk_pro, _, a_zk_avg, _, a_zk_last5, _ = compute_predictions_for_team(
-        t2, "Žluté karty", df_hist, map_metrics_sim
-    )
+    # KARTY
+    h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Žluté karty", df_hist, map_metrics_sim)
+    a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Žluté karty", df_hist, map_metrics_sim)
 
-    # průměr žlutých v lize na zápas
     ligovy_avg_zk = (df_refs_sim['HY'] + df_refs_sim['AY']).mean()
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
 
-    # kombinace: týmové predikce × rozhodčí jako multiplikátor
     base_karty = (h_zk_pro + a_zk_pro) / 2 if (h_zk_pro + a_zk_pro) > 0 else ligovy_avg_zk
     ref_zk_factor = ref_zk_avg / ligovy_avg_zk if ligovy_avg_zk > 0 else 1.0
     ocek_karty = base_karty * ref_zk_factor
 
-    # --- 3. VÝPOČET PRAVDĚPODOBNOSTÍ (POISSON) ---
+    # --- 3. POISSON ---
     p_1, p_x, p_2 = 0, 0, 0
-    for i in range(10):  # simulujeme skóre 0-9 gólů
+    for i in range(10):
         for j in range(10):
             p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
             if i > j:
@@ -945,7 +926,7 @@ elif volba == "Simulátor zápasů":
         for i in range(10) for j in range(10) if i + j > 2
     )
 
-    # --- VIZUALIZACE ZÁPASU (LOGA + VS) ---
+    # --- VIZUALIZACE ZÁPASU ---
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
         <div style="text-align: center; width: 30%;">
@@ -962,7 +943,7 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
 
-    # --- FORMA TÝMŮ ---
+    # --- FORMA ---
     f1 = ziskej_formu(t1, df_hist)[::-1]
     f2 = ziskej_formu(t2, df_hist)[::-1]
     
@@ -978,10 +959,9 @@ elif volba == "Simulátor zápasů":
     """
     st.markdown(forma_html, unsafe_allow_html=True)
 
-    # --- BOXY: xG / SKÓRE / ROHY / FAULY / KARTY ---
+    # --- BOXY ---
     style_box = "background-color: #2b3035; padding: 15px; border-radius: 12px; color: white; margin-bottom: 5px; text-align: center;"
 
-    # HORNÍ BOX (Góly a skóre)
     st.markdown(f"""
     <div style="{style_box} border-bottom: 1px solid #444; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
         <div style="display: flex; justify-content: space-around; align-items: center;">
@@ -1001,7 +981,6 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
 
-    # DOLNÍ BOX (Rohy, Fauly, Karty)
     st.markdown(f"""
     <div style="{style_box} border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 10px;">
         <div style="display: flex; justify-content: space-around; align-items: center;">
@@ -1021,13 +1000,13 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
 
-    # --- VIZUÁLNÍ PRUH 1-X-2 ---
+    # --- VIZUÁLNÍ PRUH ---
     st.markdown(f"""
     <div style="margin-top: -5px; margin-bottom: 25px;">
         <div style="display: flex; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444;">
-            <div style="width: {p1_pct}%; background-color: #4dabf7;" title="Výhra domácích"></div>
-            <div style="width: {px_pct}%; background-color: #666;" title="Remíza"></div>
-            <div style="width: {p2_pct}%; background-color: #ff6b6b;" title="Výhra hostů"></div>
+            <div style="width: {p1_pct}%; background-color: #4dabf7;"></div>
+            <div style="width: {px_pct}%; background-color: #666;"></div>
+            <div style="width: {p2_pct}%; background-color: #ff6b6b;"></div>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; padding-top: 5px; font-weight: bold;">
             <span>{t1}: {p1_pct}%</span>
@@ -1076,7 +1055,5 @@ elif volba == "Simulátor zápasů":
                 st.warning(f"⚖️ **{label}**: Bez výrazné hodnoty (Fair kurz: {round(fair_kurz, 2)})")
 
         check_value(p_1, odd_1, f"Výhra {t1}")
-        check_value(p_x, odd_x, "Remíza")
-        check_value(p_2, odd_2, f"Výhra {t2}")
-        check_value(prob_over_2_5, odd_over, "Over 2.5 gólu")
+        check_value
 
