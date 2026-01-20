@@ -31,22 +31,33 @@ LOGA_TYMU = {
 }
 
 @st.cache_data(ttl=3600)
-def nacti_data():
+def nacti_data(liga):
+    url_map = {
+        "Premier League": "https://www.football-data.co.uk/mmz4281/2526/E0.csv",
+        "La Liga": "https://www.football-data.co.uk/mmz4281/2526/SP1.csv",
+        "Serie A": "https://www.football-data.co.uk/mmz4281/2526/I1.csv"
+    }
     try:
-        df = pd.read_csv("https://www.football-data.co.uk/mmz4281/2526/E0.csv")
+        df = pd.read_csv(url_map[liga])
         df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
         return df
     except:
         return None
 
-df_hist = nacti_data()
+df_hist = nacti_data(liga)
 if df_hist is None:
     st.error("Nepodařilo se načíst data.")
     st.stop()
 
 # --- WHO SCORED DATA ---
 # Očekává se lokální soubor "whoscored.csv" se strukturou, kterou jsi poslal
-df_ws = pd.read_csv("whoscored.csv")
+ws_map = {
+    "Premier League": "whoscored.csv",
+    "La Liga": "laliga.csv",
+    "Serie A": "seriea.csv"
+}
+
+df_ws = pd.read_csv(ws_map[liga])
 
 # Mapování názvů týmů mezi WhoScored a football-data
 TEAM_NAME_MAP = {
@@ -69,7 +80,52 @@ TEAM_NAME_MAP = {
     "Sunderland": "Sunderland",
     "Tottenham": "Tottenham",
     "West Ham": "West Ham",
-    "Wolves": "Wolves"
+    "Wolves": "Wolves",
+    TEAM_NAME_MAP.update({
+    # La Liga
+    "Real Madrid": "Real Madrid",
+    "Barcelona": "Barcelona",
+    "Atlético Madrid": "Atletico Madrid",
+    "Girona": "Girona",
+    "Athletic Club": "Ath Bilbao",
+    "Real Sociedad": "Real Sociedad",
+    "Real Betis": "Betis",
+    "Valencia": "Valencia",
+    "Villarreal": "Villarreal",
+    "Osasuna": "Osasuna",
+    "Sevilla": "Sevilla",
+    "Rayo Vallecano": "Rayo Vallecano",
+    "Getafe": "Getafe",
+    "Celta Vigo": "Celta",
+    "Mallorca": "Mallorca",
+    "Alavés": "Alaves",
+    "Las Palmas": "Las Palmas",
+    "Leganés": "Leganes",
+    "Espanyol": "Espanyol",
+    "Valladolid": "Valladolid",
+
+    # Serie A
+    "Inter": "Inter",
+    "AC Milan": "AC Milan",
+    "Juventus": "Juventus",
+    "Napoli": "Napoli",
+    "Atalanta": "Atalanta",
+    "Roma": "Roma",
+    "Lazio": "Lazio",
+    "Fiorentina": "Fiorentina",
+    "Bologna": "Bologna",
+    "Torino": "Torino",
+    "Monza": "Monza",
+    "Genoa": "Genoa",
+    "Udinese": "Udinese",
+    "Sassuolo": "Sassuolo",
+    "Cagliari": "Cagliari",
+    "Empoli": "Empoli",
+    "Verona": "Verona",
+    "Lecce": "Lecce",
+    "Parma": "Parma",
+    "Venezia": "Venezia"
+})
 }
 
 # Převod názvů z WhoScored na názvy ve football-data
@@ -253,6 +309,11 @@ def urci_silu(tym):
 
 # --- 2. NAVIGACE ---
 st.sidebar.title("⚽ SPORT-MATH")
+
+liga = st.sidebar.selectbox(
+    "Liga:",
+    ["Premier League", "La Liga", "Serie A"]
+)
 volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Rozhodčí", "Simulátor zápasů"])
 
 # --- 3. SEKCE: TABULKA PL ---
