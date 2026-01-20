@@ -539,50 +539,33 @@ elif volba == "Týmové statistiky":
 
 
     # --- 5. ROZHODČÍ ---
-    # --- 5. ROZHODČÍ ---
+# --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
 
     st.markdown(f"### Analýza rozhodčích – {liga}")
 
     # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
-   # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
+    if liga == "Premier League":
+        # Premier League rozhodčí jsou v df_hist (fungovalo dřív)
+        df_refs = df_hist.copy()
 
-if liga == "Premier League":
-    # Premier League rozhodčí jsou v df_hist (fungovalo dřív)
-    df_refs = df_hist.copy()
+    elif liga == "La Liga":
+        df_refs = pd.read_csv("referees_laliga.csv")
 
-elif liga == "La Liga":
-    df_refs = pd.read_csv("referees_laliga.csv")
-
-elif liga == "Serie A":
-    df_refs = pd.read_csv("referees_seriea.csv")
-
-# Očista sloupců
-df_refs.columns = df_refs.columns.str.strip()
-
-# Kontrola, že sloupec existuje
-if "Referee" not in df_refs.columns:
-    st.warning("Dataset pro tuto ligu neobsahuje sloupec 'Referee'.")
-    st.stop()
-
-# Kontrola, že tam nejsou jen NaN
-if df_refs["Referee"].dropna().empty:
-    st.warning("Pro tuto ligu nejsou dostupná data o rozhodčích.")
-    st.stop()
-
-
+    elif liga == "Serie A":
+        df_refs = pd.read_csv("referees_seriea.csv")
 
     # Očista sloupců
     df_refs.columns = df_refs.columns.str.strip()
 
-    # Pokud není sloupec Referee → konec
+    # Kontrola, že sloupec existuje
     if "Referee" not in df_refs.columns:
-        st.info("Pro tuto ligu nejsou dostupná data o rozhodčích.")
+        st.warning("Dataset pro tuto ligu neobsahuje sloupec 'Referee'.")
         st.stop()
 
-    # Pokud jsou všichni rozhodčí prázdní
+    # Kontrola, že tam nejsou jen NaN
     if df_refs["Referee"].dropna().empty:
-        st.info("Pro tuto ligu nejsou dostupná data o rozhodčích.")
+        st.warning("Pro tuto ligu nejsou dostupná data o rozhodčích.")
         st.stop()
 
     # --- 2) PŘÍPRAVA SEZNAMU ROZHODČÍCH ---
@@ -604,6 +587,7 @@ if df_refs["Referee"].dropna().empty:
         st.session_state.ref_section_pick = "CELKEM"
 
     c_nav1, c_nav2 = st.columns([1, 1])
+   
 
     with c_nav1:
         with st.popover(f"👮 Vyber rozhodčího: {st.session_state.ref_section_pick}", use_container_width=True):
