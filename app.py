@@ -961,9 +961,9 @@ elif volba == "Simulátor zápasů":
     liga_karty_multiplier = 1.0
 
     if liga == "La Liga":
-         liga_karty_multiplier = 2.20   # přesný výpočet z 199 zápasů (4.22 ŽK)
+         liga_karty_multiplier = 2.76   # přesný výpočet z 199 zápasů (4.22 ŽK)
     elif liga == "Serie A":
-         liga_karty_multiplier = 1.25   # dopočítáme přesně, až dodáš průměr
+         liga_karty_multiplier = 2.46   # dopočítáme přesně, až dodáš průměr
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
 
     base_karty = (h_zk_pro + a_zk_pro) / 2 if (h_zk_pro + a_zk_pro) > 0 else ligovy_avg_zk
