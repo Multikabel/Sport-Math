@@ -539,11 +539,48 @@ elif volba == "Týmové statistiky":
 
 
     # --- 5. ROZHODČÍ ---
+    # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
-    st.markdown("### Analýza rozhodčích PL 25/26")
-    
-    # 1. Příprava seznamu rozhodčích (Příjmení Jméno)
-    original_refs = df_hist['Referee'].unique()
+
+    st.markdown(f"### Analýza rozhodčích – {liga}")
+
+    # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
+    if liga == "Premier League":
+        if "Referee" not in df_hist.columns:
+            st.warning("Premier League nemá dostupné rozhodčí v datech.")
+            st.stop()
+        df_refs = df_hist.copy()
+
+    elif liga == "La Liga":
+        try:
+            df_refs = pd.read_csv("referees_laliga.csv")
+        except:
+            st.error("Soubor referees_laliga.csv nebyl nalezen.")
+            st.stop()
+
+    elif liga == "Serie A":
+        try:
+            df_refs = pd.read_csv("referees_seriea.csv")
+        except:
+            st.error("Soubor referees_seriea.csv nebyl nalezen.")
+            st.stop()
+
+    # Očista sloupců
+    df_refs.columns = df_refs.columns.str.strip()
+
+    # Pokud není sloupec Referee → konec
+    if "Referee" not in df_refs.columns:
+        st.info("Pro tuto ligu nejsou dostupná data o rozhodčích.")
+        st.stop()
+
+    # Pokud jsou všichni rozhodčí prázdní
+    if df_refs["Referee"].dropna().empty:
+        st.info("Pro tuto ligu nejsou dostupná data o rozhodčích.")
+        st.stop()
+
+    # --- 2) PŘÍPRAVA SEZNAMU ROZHODČÍCH ---
+    original_refs = df_refs["Referee"].dropna().unique()
+
     ref_mapping = {}
     for r in original_refs:
         if isinstance(r, str) and " " in r:
@@ -552,33 +589,34 @@ elif volba == "Rozhodčí":
             ref_mapping[formatted] = r
         else:
             ref_mapping[r] = r
-    
+
     seznam_ref_display = ["CELKEM"] + sorted(ref_mapping.keys())
-    
-    # Session state pro výběr rozhodčího
+
+    # Session state
     if 'ref_section_pick' not in st.session_state:
         st.session_state.ref_section_pick = "CELKEM"
 
     c_nav1, c_nav2 = st.columns([1, 1])
-    
+
     with c_nav1:
         with st.popover(f"👮 Vyber rozhodčího: {st.session_state.ref_section_pick}", use_container_width=True):
             st.radio("Seznam:", seznam_ref_display, key="ref_section_pick")
-    
+
     vybrany_zobrazeni = st.session_state.ref_section_pick
 
     with c_nav2:
         metrika_ref = st.radio("Metrika:", ["Fauly", "Žluté karty"], horizontal=True, label_visibility="collapsed")
-    
+
     # Mapování metriky
     sloupce_metriky = ['HF', 'AF'] if metrika_ref == "Fauly" else ['HY', 'AY']
     label_metriky = "Počet faulů" if metrika_ref == "Fauly" else "Počet ŽK"
 
-    # --- LOGIKA: VŠICHNI ROZHODČÍ (CELKEM) ---
+    # --- 3) CELKOVÝ PŘEHLED ---
     if vybrany_zobrazeni == "CELKEM":
+
         stats_all = []
         for d_name, r_name in ref_mapping.items():
-            df_r = df_hist[df_hist['Referee'] == r_name]
+            df_r = df_refs[df_refs['Referee'] == r_name]
             if len(df_r) > 0:
                 celkem_stat = df_r[sloupce_metriky].sum(axis=1).mean()
                 stats_all.append({
@@ -586,39 +624,47 @@ elif volba == "Rozhodčí":
                     "Průměr": round(celkem_stat, 2),
                     "Zápasů": len(df_r)
                 })
-        
+
+        if not stats_all:
+            st.info("Pro tuto ligu nejsou dostupné statistiky rozhodčích.")
+            st.stop()
+
         df_chart = pd.DataFrame(stats_all).sort_values("Průměr", ascending=False)
-        
+
         base = alt.Chart(df_chart).encode(
             x=alt.X('Průměr:Q', title=f'Průměr {metrika_ref} na zápas'),
             y=alt.Y('Rozhodčí:N', sort='-x'),
             tooltip=['Rozhodčí', 'Průměr', 'Zápasů']
         )
-        
+
         bars = base.mark_bar().encode(
             color=alt.Color('Průměr:Q', scale=alt.Scale(scheme='blues'), legend=None)
         )
-        
+
         text = base.mark_text(
             align='left',
             baseline='middle',
             dx=3
         ).encode(text='Průměr:Q')
-        
+
         st.altair_chart((bars + text).properties(height=600), use_container_width=True)
 
-    # --- LOGIKA: KONKRÉTNÍ ROZHODČÍ ---
+    # --- 4) DETAIL KONKRÉTNÍHO ROZHODČÍHO ---
     else:
         real_ref_name = ref_mapping[vybrany_zobrazeni]
-        df_ref = df_hist[df_hist['Referee'] == real_ref_name].copy()
-        
+        df_ref = df_refs[df_refs['Referee'] == real_ref_name].copy()
+
+        if df_ref.empty:
+            st.info("Tento rozhodčí nemá v této lize žádné zápasy.")
+            st.stop()
+
         df_ref = df_ref.sort_values(by='Date', ascending=True)
-        
+
         df_ref['Hodnota'] = df_ref[sloupce_metriky].sum(axis=1)
         df_ref['Zapas_Nazev'] = df_ref['HomeTeam'] + " vs " + df_ref['AwayTeam']
         avg_season = df_ref['Hodnota'].mean()
 
-        # A) FORMA (5 zápasů)
+        # --- FORMA (5 zápasů) ---
         last_5 = df_ref.tail(5).sort_values(by='Date', ascending=False)
         forma_html = ""
         for _, row in last_5.iterrows():
@@ -629,7 +675,7 @@ elif volba == "Rozhodčí":
                 f'<div style="width: 20px; height: 20px; background-color: {color}; '
                 f'border-radius: 50%; margin: 0 5px;" title="{tooltip}"></div>'
             )
-        
+
         st.markdown(f"""
         <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; 
                     margin-bottom: 20px; text-align: center;">
@@ -645,15 +691,15 @@ elif volba == "Rozhodčí":
         </div>
         """, unsafe_allow_html=True)
 
-        # B) GRAF HISTORIE
+        # --- GRAF HISTORIE ---
         df_ref['Datum_Str'] = df_ref['Date'].dt.strftime('%d.%m.%Y')
-        
+
         base_hist = alt.Chart(df_ref).encode(
             y=alt.Y('Zapas_Nazev:N', sort=None, title="Zápas (chronologicky)"),
             x=alt.X('Hodnota:Q', title=label_metriky),
             tooltip=['Datum_Str', 'Zapas_Nazev', 'Hodnota']
         )
-        
+
         bars_hist = base_hist.mark_bar().encode(
             color=alt.condition(
                 alt.datum.Hodnota > avg_season,
@@ -661,27 +707,27 @@ elif volba == "Rozhodčí":
                 alt.value('#aec7e8')
             )
         )
-        
+
         text_hist = base_hist.mark_text(
             align='left',
             baseline='middle',
             dx=3,
             color='white'
         ).encode(text='Hodnota:Q')
-        
+
         st.altair_chart((bars_hist + text_hist).properties(
             height=max(300, len(df_ref) * 35)
         ), use_container_width=True)
 
-        # C) PREDIKCE
+        # --- PREDIKCE ---
         avg_last_5 = last_5['Hodnota'].mean() if not last_5.empty else avg_season
         predikce_val = (avg_season + avg_last_5) / 2
-        
+
         style_box = (
             "background-color: #2b3035; padding: 20px; border-radius: 12px; "
             "color: white; text-align: center; margin-top: 20px;"
         )
-        
+
         st.markdown(f"""
         <div style="{style_box}">
             <div style="font-size: 0.9rem; color: #aaa; text-transform: uppercase; 
@@ -711,6 +757,7 @@ elif volba == "Rozhodčí":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
 
 
 
