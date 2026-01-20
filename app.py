@@ -538,7 +538,6 @@ elif volba == "Týmové statistiky":
 
 
 
-    # --- 5. ROZHODČÍ ---
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
 
@@ -546,7 +545,6 @@ elif volba == "Rozhodčí":
 
     # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
     if liga == "Premier League":
-        # Premier League rozhodčí jsou v df_hist (fungovalo dřív)
         df_refs = df_hist.copy()
 
     elif liga == "La Liga":
@@ -587,7 +585,6 @@ elif volba == "Rozhodčí":
         st.session_state.ref_section_pick = "CELKEM"
 
     c_nav1, c_nav2 = st.columns([1, 1])
-   
 
     with c_nav1:
         with st.popover(f"👮 Vyber rozhodčího: {st.session_state.ref_section_pick}", use_container_width=True):
@@ -748,8 +745,6 @@ elif volba == "Rozhodčí":
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-
 
 
         # --- 6. SIMULÁTOR ZÁPASŮ ---
