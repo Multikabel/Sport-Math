@@ -557,38 +557,28 @@ elif volba == "Týmové statistiky":
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
 
-    # Pokud liga nemá rozhodčí v datasetu
+    st.markdown(f"### Analýza rozhodčích – {liga}")
+
+    # --- LIGY BEZ ROZHODČÍCH ---
     if liga != "Premier League":
         st.info("Tato liga nemá dostupná data o rozhodčích.")
         st.stop()
 
-    st.markdown(f"### Analýza rozhodčích – {liga}")
-
-    # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
-    if liga == "Premier League":
-        df_refs = df_hist.copy()
-
-    elif liga == "La Liga":
-        df_refs = pd.read_csv("referees_laliga.csv")
-
-    elif liga == "Serie A":
-        df_refs = pd.read_csv("referees_seriea.csv")
-
-    # Očista sloupců
+    # --- 1) NAČTENÍ ROZHODČÍCH PRO PREMIER LEAGUE ---
+    df_refs = df_hist.copy()
     df_refs.columns = df_refs.columns.str.strip()
 
-    # Parsování datumu (nutné pro řazení a formu)
+    # Parsování datumu
     if "Date" in df_refs.columns:
         df_refs["Date"] = pd.to_datetime(df_refs["Date"], errors="coerce")
 
-    # Kontrola, že sloupec existuje
+    # Kontrola sloupce
     if "Referee" not in df_refs.columns:
-        st.warning("Dataset pro tuto ligu neobsahuje sloupec 'Referee'.")
+        st.warning("Dataset neobsahuje sloupec 'Referee'.")
         st.stop()
 
-    # Kontrola, že tam nejsou jen NaN
     if df_refs["Referee"].dropna().empty:
-        st.warning("Pro tuto ligu nejsou dostupná data o rozhodčích.")
+        st.warning("V datasetu nejsou dostupná data o rozhodčích.")
         st.stop()
 
     # --- 2) PŘÍPRAVA SEZNAMU ROZHODČÍCH ---
@@ -624,10 +614,10 @@ elif volba == "Rozhodčí":
     sloupce_metriky = ['HF', 'AF'] if metrika_ref == "Fauly" else ['HY', 'AY']
     label_metriky = "Počet faulů" if metrika_ref == "Fauly" else "Počet ŽK"
 
-    # Kontrola, že metrikové sloupce existují
+    # Kontrola sloupců
     for col in sloupce_metriky:
         if col not in df_refs.columns:
-            st.warning(f"Dataset pro tuto ligu neobsahuje potřebný sloupec '{col}'.")
+            st.warning(f"Dataset neobsahuje sloupec '{col}'.")
             st.stop()
 
     # --- 3) CELKOVÝ PŘEHLED ---
@@ -674,7 +664,7 @@ elif volba == "Rozhodčí":
         df_ref = df_refs[df_refs['Referee'] == real_ref_name].copy()
 
         if df_ref.empty:
-            st.info("Tento rozhodčí nemá v této lize žádné zápasy.")
+            st.info("Tento rozhodčí nemá v této sezóně žádné zápasy.")
             st.stop()
 
         df_ref = df_ref.sort_values(by='Date', ascending=True)
@@ -776,6 +766,7 @@ elif volba == "Rozhodčí":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
 
  # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
