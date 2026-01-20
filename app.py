@@ -563,7 +563,6 @@ elif volba == "Týmové statistiky":
         """, unsafe_allow_html=True)
 
 
-
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
 
@@ -581,6 +580,10 @@ elif volba == "Rozhodčí":
 
     # Očista sloupců
     df_refs.columns = df_refs.columns.str.strip()
+
+    # Parsování datumu (nutné pro řazení a formu)
+    if "Date" in df_refs.columns:
+        df_refs["Date"] = pd.to_datetime(df_refs["Date"], errors="coerce")
 
     # Kontrola, že sloupec existuje
     if "Referee" not in df_refs.columns:
@@ -624,6 +627,12 @@ elif volba == "Rozhodčí":
     # Mapování metriky
     sloupce_metriky = ['HF', 'AF'] if metrika_ref == "Fauly" else ['HY', 'AY']
     label_metriky = "Počet faulů" if metrika_ref == "Fauly" else "Počet ŽK"
+
+    # Kontrola, že metrikové sloupce existují
+    for col in sloupce_metriky:
+        if col not in df_refs.columns:
+            st.warning(f"Dataset pro tuto ligu neobsahuje potřebný sloupec '{col}'.")
+            st.stop()
 
     # --- 3) CELKOVÝ PŘEHLED ---
     if vybrany_zobrazeni == "CELKEM":
@@ -771,7 +780,6 @@ elif volba == "Rozhodčí":
             </div>
         </div>
         """, unsafe_allow_html=True)
-
 
         # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
