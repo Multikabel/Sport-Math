@@ -140,13 +140,14 @@ else:
     df_ws = None
     WS_MAP = {}
 
-# Převod názvů z WhoScored na názvy ve football-data
-df_ws["TeamFD"] = df_ws["Team"].map(TEAM_NAME_MAP)
-
-# Lookup slovník: klíč = název týmu ve football-data
-WS_MAP = df_ws.set_index("TeamFD").to_dict(orient="index")
 
 def get_ws_metrics(team_fd_name):
+    """
+    Vrátí metriky z WhoScored pro daný tým (ve jménu football-data),
+    pokud nejsou, vrací nuly.
+    """
+
+    # Pokud nejsou WhoScored data (La Liga, Serie A)
     if WS_MAP == {}:
         return {
             "fouls": 0.0,
@@ -159,10 +160,6 @@ def get_ws_metrics(team_fd_name):
             "goals": 0.0
         }
 
-    """
-    Vrátí metriky z WhoScored pro daný tým (ve jménu football-data),
-    pokud nejsou, vrací nuly.
-    """
     ws = WS_MAP.get(team_fd_name, None)
     if ws is None:
         return {
@@ -175,6 +172,7 @@ def get_ws_metrics(team_fd_name):
             "xg": 0.0,
             "goals": 0.0
         }
+
     return {
         "fouls": ws.get("Fouls pg", 0.0),
         "fouled": ws.get("Fouled pg", 0.0),
