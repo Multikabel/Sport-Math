@@ -957,13 +957,13 @@ elif volba == "Simulátor zápasů":
     a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Žluté karty", df_hist, map_metrics_sim)
 
     ligovy_avg_zk = (df_refs_sim['HY'] + df_refs_sim['AY']).mean()
-    # --- LIGA-SPECIFICKÝ KOREKČNÍ FAKTOR PRO KARTY ---
-liga_karty_multiplier = 1.0
+        # --- LIGA-SPECIFICKÝ KOREKČNÍ FAKTOR PRO KARTY ---
+    liga_karty_multiplier = 1.0
 
-if liga == "La Liga":
-    liga_karty_multiplier = 1.38   # přesný výpočet z 199 zápasů (4.22 ŽK)
-elif liga == "Serie A":
-    liga_karty_multiplier = 1.25   # dopočítáme přesně, až dodáš průměr
+    if liga == "La Liga":
+         liga_karty_multiplier = 1.38   # přesný výpočet z 199 zápasů (4.22 ŽK)
+    elif liga == "Serie A":
+         liga_karty_multiplier = 1.25   # dopočítáme přesně, až dodáš průměr
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
 
     base_karty = (h_zk_pro + a_zk_pro) / 2 if (h_zk_pro + a_zk_pro) > 0 else ligovy_avg_zk
