@@ -8,6 +8,12 @@ import math
 # --- 1. POMOCNÉ FUNKCE A KONFIGURACE ---
 st.set_page_config(page_title="PL Analytika 2026", layout="wide", page_icon="⚽")
 
+# --- VÝBĚR LIGY MUSÍ BÝT NAHOŘE ---
+liga = st.sidebar.selectbox(
+    "Liga:",
+    ["Premier League", "La Liga", "Serie A"]
+)
+
 def poisson_pmf(k, mu):
     if mu <= 0:
         return 1.0 if k == 0 else 0.0
@@ -308,10 +314,6 @@ def urci_silu(tym):
 # --- 2. NAVIGACE ---
 st.sidebar.title("⚽ SPORT-MATH")
 
-liga = st.sidebar.selectbox(
-    "Liga:",
-    ["Premier League", "La Liga", "Serie A"]
-)
 volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Rozhodčí", "Simulátor zápasů"])
 
 # --- 3. SEKCE: TABULKA PL ---
