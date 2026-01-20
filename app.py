@@ -65,6 +65,7 @@ ws_map = {
 
 df_ws = pd.read_csv(ws_map[liga], encoding="utf-8")
 df_ws.columns = df_ws.columns.str.strip()
+
 # Mapování názvů týmů mezi WhoScored a football-data
 TEAM_NAME_MAP = {
     "Arsenal": "Arsenal",
