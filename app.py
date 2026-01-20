@@ -908,8 +908,16 @@ else:
     ocek_karty = base_karty * ref_zk_factor
 
     # --- 3. POISSON ---
-    p_1, p_x, p_2 = 0, 0, 0
-    for i in range(10):
+p_1, p_x, p_2 = 0, 0, 0
+for i in range(10):
+    for j in range(10):
+        p = poisson_pmf(i, mu_d) * poisson_pmf(j, mu_h)
+        if i > j:
+            p_1 += p
+        elif i < j:
+            p_2 += p
+        else:
+            p_x += p
 
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
