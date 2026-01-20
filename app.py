@@ -545,25 +545,22 @@ elif volba == "Rozhodčí":
     st.markdown(f"### Analýza rozhodčích – {liga}")
 
     # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
-    if liga == "Premier League":
-        if "Referee" not in df_hist.columns:
-            st.warning("Premier League nemá dostupné rozhodčí v datech.")
-            st.stop()
-        df_refs = df_hist.copy()
+    # --- 1) NAČTENÍ ROZHODČÍCH PODLE LIGY ---
+if liga == "Premier League":
+    df_refs = df_hist.copy()
 
-    elif liga == "La Liga":
-        try:
-            df_refs = pd.read_csv("referees_laliga.csv")
-        except:
-            st.error("Soubor referees_laliga.csv nebyl nalezen.")
-            st.stop()
+elif liga == "La Liga":
+    df_refs = pd.read_csv("referees_laliga.csv")
 
-    elif liga == "Serie A":
-        try:
-            df_refs = pd.read_csv("referees_seriea.csv")
-        except:
-            st.error("Soubor referees_seriea.csv nebyl nalezen.")
-            st.stop()
+elif liga == "Serie A":
+    df_refs = pd.read_csv("referees_seriea.csv")
+
+df_refs.columns = df_refs.columns.str.strip()
+
+if "Referee" not in df_refs.columns or df_refs["Referee"].dropna().empty:
+    st.info("Pro tuto ligu nejsou dostupná data o rozhodčích.")
+    st.stop()
+
 
     # Očista sloupců
     df_refs.columns = df_refs.columns.str.strip()
