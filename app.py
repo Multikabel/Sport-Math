@@ -614,13 +614,20 @@ elif volba == "Rozhodčí":
 
     st.markdown(f"### Analýza rozhodčích – {liga}")
 
-    # --- LIGY BEZ ROZHODČÍCH ---
-    if liga != "Premier League":
-        st.info("Tato liga nemá dostupná data o rozhodčích.")
+    # --- 1) NAČTENÍ DAT PODLE LIGY ---
+    if liga == "Premier League":
+        df_refs = df_hist.copy()
+
+    elif liga == "La Liga":
+        df_refs = pd.read_csv("SP1.csv")   # máš doplněný sloupec Referee
+
+    elif liga == "Serie A":
+        df_refs = pd.read_csv("I1.csv")    # máš doplněný sloupec Referee
+
+    else:
+        st.info("Pro tuto ligu nejsou dostupná data o rozhodčích.")
         st.stop()
 
-    # --- 1) NAČTENÍ ROZHODČÍCH PRO PREMIER LEAGUE ---
-    df_refs = df_hist.copy()
     df_refs.columns = df_refs.columns.str.strip()
 
     # Parsování datumu
@@ -821,6 +828,7 @@ elif volba == "Rozhodčí":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
 
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
