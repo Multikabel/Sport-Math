@@ -903,13 +903,14 @@ elif volba == "Simulátor zápasů":
         return df_hist[df_hist[role + 'Team'] == tym][sloupec].mean()
 
     
-    # --- KONTROLA VÝBĚRU TÝMŮ --- 
+        # --- KONTROLA VÝBĚRU TÝMŮ --- 
     if not t1 or not t2:
         st.warning("Nejdřív vyber oba týmy pro simulaci zápasu.")
         st.stop()
-    
+
     # --- 1. GÓLY (xG) – HYBRIDNÍ MODEL ---
     sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
+
 
     mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') +
                 ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
