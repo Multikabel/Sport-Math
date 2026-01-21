@@ -834,57 +834,57 @@ elif volba == "Rozhodčí":
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 elif volba == "Simulátor zápasů":
 
-# --- NAČTENÍ DAT PRO ROZHODČÍ / LIGOVÉ STATISTIKY ---
-if liga == "Premier League":
-    df_refs_sim = df_hist.copy()
-elif liga == "La Liga":
-    df_refs_sim = pd.read_csv("SP1.csv")
-elif liga == "Serie A":
-    df_refs_sim = pd.read_csv("I1.csv")
-else:
-    df_refs_sim = df_hist.copy()  # fallback pro jistotu
+    # --- NAČTENÍ DAT PRO ROZHODČÍ / LIGOVÉ STATISTIKY ---
+    if liga == "Premier League":
+        df_refs_sim = df_hist.copy()
+    elif liga == "La Liga":
+        df_refs_sim = pd.read_csv("SP1.csv")
+    elif liga == "Serie A":
+        df_refs_sim = pd.read_csv("I1.csv")
+    else:
+        df_refs_sim = df_hist.copy()  # fallback pro jistotu
 
-df_refs_sim.columns = df_refs_sim.columns.str.strip()
+    df_refs_sim.columns = df_refs_sim.columns.str.strip()
 
-if "Date" in df_refs_sim.columns:
-    df_refs_sim["Date"] = pd.to_datetime(df_refs_sim["Date"], errors="coerce")
+    if "Date" in df_refs_sim.columns:
+        df_refs_sim["Date"] = pd.to_datetime(df_refs_sim["Date"], errors="coerce")
 
-# --- KONTROLA ROZHODČÍCH ---
-has_referees = ("Referee" in df_refs_sim.columns) and df_refs_sim["Referee"].notna().any()
+    # --- KONTROLA ROZHODČÍCH ---
+    has_referees = ("Referee" in df_refs_sim.columns) and df_refs_sim["Referee"].notna().any()
 
-vybrany_ref = None
-ref_faktor = 1.0
-ref_zk_factor = 1.0
+    vybrany_ref = None
+    ref_faktor = 1.0
+    ref_zk_factor = 1.0
 
-if has_referees:
-    original_refs = df_refs_sim["Referee"].dropna().unique()
+    if has_referees:
+        original_refs = df_refs_sim["Referee"].dropna().unique()
 
-    # mapování jmen: "Anthony Taylor" → "Taylor Anthony"
-    ref_mapping = {}
-    for r in original_refs:
-        if isinstance(r, str) and " " in r:
-            parts = r.split(" ")
-            formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
-            ref_mapping[formatted] = r
-        else:
-            ref_mapping[r] = r
+        # mapování jmen: "Anthony Taylor" → "Taylor Anthony"
+        ref_mapping = {}
+        for r in original_refs:
+            if isinstance(r, str) and " " in r:
+                parts = r.split(" ")
+                formatted = f"{parts[-1]} {' '.join(parts[:-1])}"
+                ref_mapping[formatted] = r
+            else:
+                ref_mapping[r] = r
 
-    ref_display_list = sorted(ref_mapping.keys())
+        ref_display_list = sorted(ref_mapping.keys())
 
-    if ref_display_list:
-        if 'ref_display_pick' not in st.session_state:
-            st.session_state.ref_display_pick = ref_display_list[0]
+        if ref_display_list:
+            if 'ref_display_pick' not in st.session_state:
+                st.session_state.ref_display_pick = ref_display_list[0]
 
-        with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_display_pick}", use_container_width=True):
-            st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
+            with st.popover(f"🏁 Rozhodčí: {st.session_state.ref_display_pick}", use_container_width=True):
+                st.radio("Vyber rozhodčího:", ref_display_list, key="ref_display_pick")
 
-        vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick)
+            vybrany_ref = ref_mapping.get(st.session_state.ref_display_pick)
 
-# pokud není vybraný rozhodčí, použijeme ligový průměr
-if has_referees and vybrany_ref is not None:
-    ref_data = df_refs_sim[df_refs_sim['Referee'] == vybrany_ref]
-else:
-    ref_data = df_refs_sim
+    # pokud není vybraný rozhodčí, použijeme ligový průměr
+    if has_referees and vybrany_ref is not None:
+        ref_data = df_refs_sim[df_refs_sim['Referee'] == vybrany_ref]
+    else:
+        ref_data = df_refs_sim
 
 
 
