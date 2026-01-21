@@ -982,9 +982,9 @@ elif volba == "Simulátor zápasů":
     # --- LIGA-SPECIFICKÝ KOREKČNÍ FAKTOR PRO KARTY ---
     liga_karty_multiplier = 1.0
     if liga == "La Liga":
-        liga_karty_multiplier = 2.20   # kalibrace na 4.22 ŽK + podhodnocený model
+        liga_karty_multiplier = 2.76   # kalibrace na 4.22 ŽK + podhodnocený model
     elif liga == "Serie A":
-        liga_karty_multiplier = 1.23   # kalibrace na 3.76 ŽK
+        liga_karty_multiplier = 2.46   # kalibrace na 3.76 ŽK
 
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
 
