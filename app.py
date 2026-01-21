@@ -832,6 +832,24 @@ elif volba == "Rozhodčí":
 
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
+# --- VÝBĚR TÝMŮ ---
+    if 'sim_team_1' not in st.session_state:
+        st.session_state.sim_team_1 = týmy_seznam[0]
+    if 'sim_team_2' not in st.session_state:
+        st.session_state.sim_team_2 = týmy_seznam[1]
+
+    c_t1, c_t2 = st.columns(2)
+
+    with c_t1:
+        with st.popover(f"🏠 Domácí: {st.session_state.sim_team_1}", use_container_width=True):
+            st.radio("Vyber domácí tým:", týmy_seznam, key="sim_team_1")
+
+    with c_t2:
+        with st.popover(f"✈️ Hosté: {st.session_state.sim_team_2}", use_container_width=True):
+            st.radio("Vyber hostující tým:", týmy_seznam, key="sim_team_2")
+
+    t1 = st.session_state.sim_team_1
+    t2 = st.session_state.sim_team_2
 elif volba == "Simulátor zápasů":
 
     # --- NAČTENÍ DAT PRO ROZHODČÍ / LIGOVÉ STATISTIKY ---
