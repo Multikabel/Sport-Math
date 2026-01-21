@@ -886,8 +886,6 @@ elif volba == "Simulátor zápasů":
     else:
         ref_data = df_refs_sim
 
-
-
     # --- FUNKCE: VÝPOČET DLE SÍLY SOUPEŘE PRO GÓLY ---
     def ziskej_stats_sila(tym, role, sila_soupere, sloupec):
         if role == 'Home':
@@ -902,15 +900,13 @@ elif volba == "Simulátor zápasů":
             return res.mean()
         return df_hist[df_hist[role + 'Team'] == tym][sloupec].mean()
 
-    
-        # --- KONTROLA VÝBĚRU TÝMŮ --- 
+    # --- KONTROLA VÝBĚRU TÝMŮ --- 
     if not t1 or not t2:
         st.warning("Nejdřív vyber oba týmy pro simulaci zápasu.")
         st.stop()
 
     # --- 1. GÓLY (xG) – HYBRIDNÍ MODEL ---
     sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
-
 
     mu_d_raw = (ziskej_stats_sila(t1, 'Home', sila_t2, 'FTHG') +
                 ziskej_stats_sila(t2, 'Away', sila_t1, 'FTHG')) / 2
@@ -977,7 +973,6 @@ elif volba == "Simulátor zápasů":
 
     ocek_karty = base_karty * ref_zk_factor * liga_karty_multiplier
 
-
     # --- 3. POISSON ---
     p_1, p_x, p_2 = 0, 0, 0
     for i in range(10):
@@ -1015,7 +1010,6 @@ elif volba == "Simulátor zápasů":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
 
     # --- FORMA ---
     f1 = ziskej_formu(t1, df_hist)[::-1]
@@ -1129,5 +1123,3 @@ elif volba == "Simulátor zápasů":
                 st.warning(f"⚖️ **{label}**: Bez výrazné hodnoty (Fair kurz: {round(fair_kurz, 2)})")
 
         check_value(p_1, odd_1, f"Výhra {t1}")
-        check_value
-
