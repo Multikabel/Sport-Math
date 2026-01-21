@@ -950,22 +950,24 @@ elif volba == "Simulátor zápasů":
 
     ocek_rohy = h_rohy_pro + a_rohy_pro
 
-    # KARTY
+       # KARTY
     h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Žluté karty", df_hist, map_metrics_sim)
     a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Žluté karty", df_hist, map_metrics_sim)
 
     ligovy_avg_zk = (df_refs_sim['HY'] + df_refs_sim['AY']).mean()
-        # --- LIGA-SPECIFICKÝ KOREKČNÍ FAKTOR PRO KARTY ---
-    liga_karty_multiplier = 1.0
 
+    # --- LIGA-SPECIFICKÝ KOREKČNÍ FAKTOR PRO KARTY ---
+    liga_karty_multiplier = 1.0
     if liga == "La Liga":
-         liga_karty_multiplier = 2.76   # přesný výpočet z 199 zápasů (4.22 ŽK)
+        liga_karty_multiplier = 2.20   # kalibrace na 4.22 ŽK + podhodnocený model
     elif liga == "Serie A":
-         liga_karty_multiplier = 2.46   # dopočítáme přesně, až dodáš průměr
+        liga_karty_multiplier = 1.23   # kalibrace na 3.76 ŽK
+
     ref_zk_avg = ref_data[['HY', 'AY']].sum(axis=1).mean() if not ref_data.empty else ligovy_avg_zk
 
     base_karty = (h_zk_pro + a_zk_pro) / 2 if (h_zk_pro + a_zk_pro) > 0 else ligovy_avg_zk
     ref_zk_factor = ref_zk_avg / ligovy_avg_zk if ligovy_avg_zk > 0 else 1.0
+
     ocek_karty = base_karty * ref_zk_factor * liga_karty_multiplier
 
     # --- 3. POISSON ---
