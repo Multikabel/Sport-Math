@@ -905,8 +905,8 @@ elif volba == "Simulátor zápasů":
     
     # --- KONTROLA VÝBĚRU TÝMŮ --- 
     if not t1 or not t2:
-    st.warning("Nejdřív vyber oba týmy pro simulaci zápasu.")
-    st.stop()
+        st.warning("Nejdřív vyber oba týmy pro simulaci zápasu.")
+        st.stop()
     
     # --- 1. GÓLY (xG) – HYBRIDNÍ MODEL ---
     sila_t1, sila_t2 = urci_silu(t1), urci_silu(t2)
