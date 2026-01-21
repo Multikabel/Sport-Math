@@ -950,7 +950,7 @@ elif volba == "Simulátor zápasů":
 
     ocek_rohy = h_rohy_pro + a_rohy_pro
 
-       # KARTY
+    # KARTY
     h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Žluté karty", df_hist, map_metrics_sim)
     a_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Žluté karty", df_hist, map_metrics_sim)
 
@@ -969,6 +969,7 @@ elif volba == "Simulátor zápasů":
     ref_zk_factor = ref_zk_avg / ligovy_avg_zk if ligovy_avg_zk > 0 else 1.0
 
     ocek_karty = base_karty * ref_zk_factor * liga_karty_multiplier
+
 
     # --- 3. POISSON ---
     p_1, p_x, p_2 = 0, 0, 0
