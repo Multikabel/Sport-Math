@@ -1122,17 +1122,16 @@ elif volba == "Simulátor zápasů":
     """, unsafe_allow_html=True)
 
     # Funkce pro výběr barvy podle pravděpodobnosti
-def prob_color(p):
-    if p >= 0.75:
-        return "#3ba55d"   # jemná zelená
-    elif p >= 0.55:
-        return "#d1b354"   # jemná žlutá
-    else:
-        return "#c45c5c"   # jemná červená
+    def prob_color(p):
+        if p >= 0.75:
+            return "#3ba55d"   # jemná zelená
+        elif p >= 0.55:
+            return "#d1b354"   # jemná žlutá
+        else:
+            return "#c45c5c"   # jemná červená
 
-# Vytvoření barevných karet
-st.markdown(
-    f"""
+    # Vytvoření barevných karet
+    st.markdown(f"""
     <div style="display:flex; justify-content:space-between; margin-top:12px;">
 
         <div style="background:{prob_color(p_over_8_5)}; padding:10px 14px; border-radius:8px; width:23%; text-align:center; opacity:0.9;">
@@ -1156,9 +1155,7 @@ st.markdown(
         </div>
 
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    """,unsafe_allow_html=True)
     
     
 
