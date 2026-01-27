@@ -972,21 +972,39 @@ elif volba == "Simulátor zápasů":
 
     ocek_fauly = (h_fauly_pro + a_fauly_pro) * ref_faktor
 
-    # --- ROHY (čistý, stabilní model) ---
+    # --- ROHY (nový model + rozhodčí + Poisson) ---
 
-    # 1) Základní predikce z historie (tvůj původní model)
+    # 1) Základní predikce z nového modelu (compute_predictions_for_team)
     h_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Rohy", df_hist, map_metrics_sim)
     a_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Rohy", df_hist, map_metrics_sim)
 
-    # 2) Jemný faktor DOMA / VENKU
-    home_boost = 1.05
-    away_boost = 0.95
-
-    h_rohy_pro *= home_boost
-    a_rohy_pro *= away_boost
-
-    # 3) Výsledné očekávané rohy – bez dalších multiplikátorů, bez capu
     ocek_rohy = h_rohy_pro + a_rohy_pro
+
+    # 2) Faktor ROZHODČÍHO pro rohy (pokud jsou data)
+    roh_ref_factor = 1.0
+    if has_referees and "HC" in df_refs_sim.columns and "AC" in df_refs_sim.columns:
+        ligovy_avg_rohy = (df_refs_sim["HC"] + df_refs_sim["AC"]).mean()
+
+        if vybrany_ref is not None:
+            ref_rohy_data = df_refs_sim[df_refs_sim["Referee"] == vybrany_ref]
+        else:
+            ref_rohy_data = df_refs_sim
+
+        if not ref_rohy_data.empty:
+            ref_avg_rohy = (ref_rohy_data["HC"] + ref_rohy_data["AC"]).mean()
+            if ligovy_avg_rohy > 0:
+                roh_ref_factor = ref_avg_rohy / ligovy_avg_rohy
+
+    ocek_rohy *= roh_ref_factor
+
+    # 3) Poisson pro rohy – pravděpodobnosti Over linek
+    def prob_over_rohy(line, mu):
+        return sum(poisson_pmf(k, mu) for k in range(0, 40) if k > line)
+
+    p_over_8_5  = prob_over_rohy(8.5,  ocek_rohy)
+    p_over_9_5  = prob_over_rohy(9.5,  ocek_rohy)
+    p_over_10_5 = prob_over_rohy(10.5, ocek_rohy)
+    p_over_11_5 = prob_over_rohy(11.5, ocek_rohy)
 
     # KARTY
     h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Žluté karty", df_hist, map_metrics_sim)
