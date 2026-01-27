@@ -1123,31 +1123,24 @@ elif volba == "Simulátor zápasů":
 
     st.markdown(f"""
     <div style="display:flex; justify-content:space-between; margin-top:12px;">
-
         <div style="background:#1e1e1e; padding:10px 14px; border-radius:8px; width:23%; text-align:center;">
             <div style="font-size:0.7rem; color:#888;">Over 8.5</div>
             <div style="font-size:1.0rem; font-weight:bold; color:#fff;">{round(p_over_8_5*100)}%</div>
         </div>
-
         <div style="background:#1e1e1e; padding:10px 14px; border-radius:8px; width:23%; text-align:center;">
             <div style="font-size:0.7rem; color:#888;">Over 9.5</div>
             <div style="font-size:1.0rem; font-weight:bold; color:#fff;">{round(p_over_9_5*100)}%</div>
         </div>
-
         <div style="background:#1e1e1e; padding:10px 14px; border-radius:8px; width:23%; text-align:center;">
             <div style="font-size:0.7rem; color:#888;">Over 10.5</div>
             <div style="font-size:1.0rem; font-weight:bold; color:#fff;">{round(p_over_10_5*100)}%</div>
         </div>
-
         <div style="background:#1e1e1e; padding:10px 14px; border-radius:8px; width:23%; text-align:center;">
             <div style="font-size:0.7rem; color:#888;">Over 11.5</div>
             <div style="font-size:1.0rem; font-weight:bold; color:#fff;">{round(p_over_11_5*100)}%</div>
         </div>
-
     </div>
-    """,
-    unsafe_allow_html=True
-    )
+    """,unsafe_allow_html=True)
     
     
 
