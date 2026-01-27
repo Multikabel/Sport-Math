@@ -980,8 +980,9 @@ elif volba == "Simulátor zápasů":
 
     ocek_rohy = h_rohy_pro + a_rohy_pro
 
-    # 2) Faktor ROZHODČÍHO pro rohy (pokud jsou data)
-    roh_ref_factor = 1.0
+    # 2) Faktor ROZHODČÍHO – realistický, jemný vliv
+    roh_ref_offset = 0.0
+
     if has_referees and "HC" in df_refs_sim.columns and "AC" in df_refs_sim.columns:
         ligovy_avg_rohy = (df_refs_sim["HC"] + df_refs_sim["AC"]).mean()
 
@@ -992,10 +993,12 @@ elif volba == "Simulátor zápasů":
 
         if not ref_rohy_data.empty:
             ref_avg_rohy = (ref_rohy_data["HC"] + ref_rohy_data["AC"]).mean()
-            if ligovy_avg_rohy > 0:
-                roh_ref_factor = ref_avg_rohy / ligovy_avg_rohy
 
-    ocek_rohy *= roh_ref_factor
+            # jemný, realistický vliv rozhodčího
+            roh_ref_offset = (ref_avg_rohy - ligovy_avg_rohy) * 0.15
+
+    # aplikace offsetu
+    ocek_rohy += roh_ref_offset
 
     # 3) Poisson pro rohy – pravděpodobnosti Over linek
     def prob_over_rohy(line, mu):
