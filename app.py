@@ -1121,7 +1121,7 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
 
-        st.markdown(f"""
+    st.markdown(f"""
     <div style="display: flex; justify-content: space-around; margin-top: 12px;">
 
         <div style="background: #1e1e1e; padding: 10px 14px; border-radius: 8px; width: 22%; text-align: center;">
