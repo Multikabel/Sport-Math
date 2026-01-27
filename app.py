@@ -1121,6 +1121,17 @@ elif volba == "Simulátor zápasů":
     </div>
     """, unsafe_allow_html=True)
 
+    # --- Poisson pravděpodobnosti rohů ---
+    st.markdown(f"""
+    <div style="margin-top: 10px; font-size: 0.8rem; color: #aaa; text-align: center;">
+        <b>Poisson – pravděpodobnosti rohů:</b><br>
+        Over 8.5:  {round(p_over_8_5*100)}%<br>
+        Over 9.5:  {round(p_over_9_5*100)}%<br>
+        Over 10.5: {round(p_over_10_5*100)}%<br>
+        Over 11.5: {round(p_over_11_5*100)}%
+    </div>
+    """, unsafe_allow_html=True)
+
     # --- VIZUÁLNÍ PRUH ---
     st.markdown(f"""
     <div style="margin-top: -5px; margin-bottom: 25px;">
