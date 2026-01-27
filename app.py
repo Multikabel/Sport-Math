@@ -967,58 +967,21 @@ elif volba == "Simulátor zápasů":
 
     ocek_fauly = (h_fauly_pro + a_fauly_pro) * ref_faktor
 
-    # --- ROHY (xC – zjednodušený, stabilní model) ---
+    # --- ROHY (čistý, stabilní model) ---
 
-    # 1) Základní predikce z historie (sezóna + forma + WS)
+    # 1) Základní predikce z historie (tvůj původní model)
     h_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Rohy", df_hist, map_metrics_sim)
     a_rohy_pro, _, _, _, _, _ = compute_predictions_for_team(t2, "Rohy", df_hist, map_metrics_sim)
 
-    # 2) Domácí / venkovní faktor (jemný)
-    home_boost = 1.06
-    away_boost = 0.94
+    # 2) Jemný faktor DOMA / VENKU
+    home_boost = 1.05
+    away_boost = 0.95
 
     h_rohy_pro *= home_boost
     a_rohy_pro *= away_boost
 
-    # 3) Síla soupeře (velmi jemná)
-    def roh_sila_factor(sila_tymu, sila_soupere):
-        if sila_tymu == "A" and sila_soupere == "C":
-            return 1.06
-        if sila_tymu == "C" and sila_soupere == "A":
-            return 1.03
-        if sila_tymu == sila_soupere:
-            return 0.97
-        return 1.00
-
-    h_rohy_pro *= roh_sila_factor(sila_t1, sila_t2)
-    a_rohy_pro *= roh_sila_factor(sila_t2, sila_t1)
-
-    # 4) Dominance (shots + dribbles)
-    ws1 = get_ws_metrics(t1)
-    ws2 = get_ws_metrics(t2)
-
-    dom1 = 0.6 * ws1["shots"] + 0.4 * ws1["dribbles"]
-    dom2 = 0.6 * ws2["shots"] + 0.4 * ws2["dribbles"]
-
-    league_dom_avg = 13.0
-
-    dom_factor_t1 = 1 + (dom1 - league_dom_avg) * 0.015
-    dom_factor_t2 = 1 + (dom2 - league_dom_avg) * 0.015
-
-    h_rohy_pro *= dom_factor_t1
-    a_rohy_pro *= dom_factor_t2
-
-    # 5) Kalibrace na ligový průměr rohů
-    ligovy_avg_rohy = (df_hist['HC'] + df_hist['AC']).mean()
-    model_avg = (h_rohy_pro + a_rohy_pro) / 2
-    kalib_factor = ligovy_avg_rohy / max(model_avg, 0.01)
-
-    h_rohy_pro *= kalib_factor
-    a_rohy_pro *= kalib_factor
-
-    # 6) Výsledné expected corners + mírný cap
+    # 3) Výsledné očekávané rohy – bez dalších multiplikátorů, bez capu
     ocek_rohy = h_rohy_pro + a_rohy_pro
-    ocek_rohy = max(6.0, min(ocek_rohy, 14.0))
 
     # KARTY
     h_zk_pro, _, _, _, _, _ = compute_predictions_for_team(t1, "Žluté karty", df_hist, map_metrics_sim)
