@@ -324,21 +324,26 @@ def compute_predictions_for_team(team, metrika_team, df_hist, map_metrics):
         )
         return pred_zk_pro, pred_zk_proti, avg_pro, avg_proti, avg_last_5_pro, avg_last_5_proti
 
-    # --- ROHY ---
+    # --- ROHY (nový přesný model) ---
     if metrika_team == "Rohy":
-        pred_rohy_pro = (
-            0.50 * avg_pro +
-            0.30 * avg_last_5_pro +
-            0.10 * ws_shots +
-            0.10 * ws_dribbles
-        )
-        pred_rohy_proti = (
-            0.50 * avg_proti +
-            0.30 * avg_last_5_proti +
-            0.10 * ws_shots +
-            0.10 * ws_dribbles
-        )
+
+    # základ: sezóna + forma
+        base = 0.60 * avg_pro + 0.40 * avg_last_5_pro
+
+    # dominance: střely + dribbles
+        dom = 0.5 * ws_shots + 0.3 * ws_dribbles
+
+    # normalizace dominance
+        dom_factor = 1 + (dom - 13) * 0.02   # 13 = PL průměr dominance
+
+        pred_rohy_pro = base * dom_factor
+
+    # proti
+        base_proti = 0.60 * avg_proti + 0.40 * avg_last_5_proti
+        pred_rohy_proti = base_proti * dom_factor
+
         return pred_rohy_pro, pred_rohy_proti, avg_pro, avg_proti, avg_last_5_pro, avg_last_5_proti
+
 
     # Fallback
     pred_pro = (avg_pro + avg_last_5_pro) / 2
