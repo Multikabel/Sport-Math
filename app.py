@@ -392,7 +392,7 @@ def urci_silu(tym):
 # --- 2. NAVIGACE ---
 st.sidebar.title("⚽ SPORT-MATH")
 
-volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Rozhodčí", "Simulátor zápasů"])
+volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Cross-tab", "Rozhodčí", "Simulátor zápasů"])
 
 # --- 3. SEKCE: TABULKA PL ---
 if volba == "Tabulka PL":
@@ -612,6 +612,130 @@ elif volba == "Týmové statistiky":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+
+# --- 4.5 CROSS-TAB ---
+elif volba == "Cross-tab":
+
+    st.markdown("### 📊 Cross‑tab analýza týmů")
+
+    # --- Výběr týmu ---
+    if 'cross_pick' not in st.session_state:
+        st.session_state.cross_pick = týmy_seznam[0]
+
+    with st.popover(f"👕 Vyber tým: {st.session_state.cross_pick}", use_container_width=True):
+        st.radio("Seznam týmů:", týmy_seznam, key="cross_pick")
+
+    vybrany_team = st.session_state.cross_pick
+
+    # --- Přepínač Doma / Venku ---
+    mode = st.radio("Místo zápasu:", ["Doma", "Venku"], horizontal=True)
+
+    # --- Seřazení týmů podle tabulky ---
+    teams_sorted = df_top.reset_index().rename(columns={"index": "Pozice"})
+    teams_sorted["Logo"] = teams_sorted["Tým"].map(LOGA_TYMU)
+
+    # --- Funkce pro získání statistik ---
+    def get_match_stats(df, selected_team, opponent, mode):
+        if mode == "Doma":
+            row = df[(df["HomeTeam"] == selected_team) & (df["AwayTeam"] == opponent)]
+            p = "H"
+            o = "A"
+        else:
+            row = df[(df["AwayTeam"] == selected_team) & (df["HomeTeam"] == opponent)]
+            p = "A"
+            o = "H"
+
+        if row.empty:
+            return None
+
+        row = row.iloc[0]
+
+        # Výsledek
+        gf = row[f"{p}G"]
+        ga = row[f"{o}G"]
+
+        if gf > ga:
+            res = "W"
+        elif gf == ga:
+            res = "D"
+        else:
+            res = "L"
+
+        return {
+            "result": res,
+            "fa_plus": row[f"{p}F"],
+            "fa_minus": row[f"{o}F"],
+            "zk_plus": row[f"{p}Y"],
+            "zk_minus": row[f"{o}Y"],
+            "ro_plus": row[f"{p}C"],
+            "ro_minus": row[f"{o}C"],
+        }
+
+    # --- Barvy výsledků ---
+    def result_color(r):
+        return {
+            "W": "#3ba55d",
+            "D": "#d1b354",
+            "L": "#c45c5c"
+        }.get(r, "transparent")
+
+    # --- Generování HTML řádků ---
+    rows_html = ""
+
+    for _, row in teams_sorted.iterrows():
+        opponent = row["Tým"]
+        logo = row["Logo"]
+
+        highlight = "background:#222;" if opponent == vybrany_team else ""
+
+        stats = get_match_stats(df_hist, vybrany_team, opponent, mode)
+
+        if stats is None:
+            result_cell = "<td></td>"
+            fa_p = fa_m = zk_p = zk_m = ro_p = ro_m = ""
+        else:
+            color = result_color(stats["result"])
+            result_cell = f'<td style="background:{color}; font-weight:bold; text-align:center;">{stats["result"]}</td>'
+            fa_p = stats["fa_plus"]
+            fa_m = stats["fa_minus"]
+            zk_p = stats["zk_plus"]
+            zk_m = stats["zk_minus"]
+            ro_p = stats["ro_plus"]
+            ro_m = stats["ro_minus"]
+
+        rows_html += f"""
+        <tr style="{highlight}">
+            <td style="padding:4px 8px; display:flex; align-items:center; gap:8px;">
+                <img src="{logo}" width="22"> {opponent}
+            </td>
+            {result_cell}
+            <td style="text-align:center;">{fa_p}</td>
+            <td style="text-align:center;">{fa_m}</td>
+            <td style="text-align:center;">{zk_p}</td>
+            <td style="text-align:center;">{zk_m}</td>
+            <td style="text-align:center;">{ro_p}</td>
+            <td style="text-align:center;">{ro_m}</td>
+        </tr>
+        """
+
+    # --- Vykreslení tabulky ---
+    st.markdown(f"""
+    <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:0.85rem;">
+        <tr style="background:#111; color:#aaa;">
+            <th style="text-align:left; padding:6px 8px;">Tým</th>
+            <th style="text-align:center; padding:6px 8px;">Výsledek</th>
+            <th style="text-align:center; padding:6px 8px;">Fauly +</th>
+            <th style="text-align:center; padding:6px 8px;">Fauly -</th>
+            <th style="text-align:center; padding:6px 8px;">ŽK +</th>
+            <th style="text-align:center; padding:6px 8px;">ŽK -</th>
+            <th style="text-align:center; padding:6px 8px;">Rohy +</th>
+            <th style="text-align:center; padding:6px 8px;">Rohy -</th>
+        </tr>
+        {rows_html}
+    </table>
+    """, unsafe_allow_html=True)
+        
 
 
 # --- 5. ROZHODČÍ ---
