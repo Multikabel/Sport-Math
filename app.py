@@ -738,14 +738,14 @@ elif volba == "Cross-tab":
     st.markdown(f"""
         <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:0.85rem;">
             <tr style="background:#111; color:#aaa;">
-                <th style="text-align:left; padding:6px 8px;">Tým</th>
+                <th style="text-align:left; padding:6px 10px;">Tým</th>
                 <th style="text-align:center; padding:6px 8px;">V</th>
                 <th style="text-align:center; padding:6px 8px;">F +</th>
                 <th style="text-align:center; padding:6px 8px;">F -</th>
                 <th style="text-align:center; padding:6px 8px;">ŽK +</th>
                 <th style="text-align:center; padding:6px 8px;">ŽK -</th>
-                <th style="text-align:center; padding:6px 8px;">Rohy +</th>
-                <th style="text-align:center; padding:6px 8px;">Rohy -</th>
+                <th style="text-align:center; padding:6px 8px;">R +</th>
+                <th style="text-align:center; padding:6px 8px;">R -</th>
             </tr>
             {rows_html}
         </table>
