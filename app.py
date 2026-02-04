@@ -736,7 +736,7 @@ elif volba == "Cross-tab":
 
     # --- Vykreslení tabulky ---
     st.markdown(f"""
-        <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:0.85rem;">
+        <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:0.75rem;">
             <tr style="background:#111; color:#aaa;">
                 <th style="text-align:left; padding:6px 8px;">Tým</th>
                 <th style="text-align:center; padding:6px 8px;">V</th>
