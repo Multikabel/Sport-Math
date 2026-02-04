@@ -637,40 +637,53 @@ elif volba == "Cross-tab":
 
     # --- Funkce pro získání statistik ---
     def get_match_stats(df, selected_team, opponent, mode):
-        if mode == "Doma":
-            row = df[(df["HomeTeam"] == selected_team) & (df["AwayTeam"] == opponent)]
-            p = "H"
-            o = "A"
-        else:
-            row = df[(df["AwayTeam"] == selected_team) & (df["HomeTeam"] == opponent)]
-            p = "A"
-            o = "H"
+    # Určení prefixů
+    if mode == "Doma":
+        row = df[(df["HomeTeam"] == selected_team) & (df["AwayTeam"] == opponent)]
+        p = "H"   # selected team prefix
+        o = "A"   # opponent prefix
+    else:
+        row = df[(df["AwayTeam"] == selected_team) & (df["HomeTeam"] == opponent)]
+        p = "A"
+        o = "H"
 
-        if row.empty:
-            return None
+    if row.empty:
+        return None
 
-        row = row.iloc[0]
+    row = row.iloc[0]
 
-        # Výsledek
-        gf = row[f"{p}G"]
-        ga = row[f"{o}G"]
+    # --- Góly ---
+    gf = row["FTHG"] if p == "H" else row["FTAG"]
+    ga = row["FTAG"] if p == "H" else row["FTHG"]
 
-        if gf > ga:
-            res = "W"
-        elif gf == ga:
-            res = "D"
-        else:
-            res = "L"
+    if gf > ga:
+        res = "W"
+    elif gf == ga:
+        res = "D"
+    else:
+        res = "L"
 
-        return {
-            "result": res,
-            "fa_plus": row[f"{p}F"],
-            "fa_minus": row[f"{o}F"],
-            "zk_plus": row[f"{p}Y"],
-            "zk_minus": row[f"{o}Y"],
-            "ro_plus": row[f"{p}C"],
-            "ro_minus": row[f"{o}C"],
-        }
+    # --- Fauly ---
+    fa_plus  = row["HF"] if p == "H" else row["AF"]
+    fa_minus = row["AF"] if p == "H" else row["HF"]
+
+    # --- Žluté karty ---
+    zk_plus  = row["HY"] if p == "H" else row["AY"]
+    zk_minus = row["AY"] if p == "H" else row["HY"]
+
+    # --- Rohy ---
+    ro_plus  = row["HC"] if p == "H" else row["AC"]
+    ro_minus = row["AC"] if p == "H" else row["HC"]
+
+    return {
+        "result": res,
+        "fa_plus": fa_plus,
+        "fa_minus": fa_minus,
+        "zk_plus": zk_plus,
+        "zk_minus": zk_minus,
+        "ro_plus": ro_plus,
+        "ro_minus": ro_minus
+    }
 
     # --- Barvy výsledků ---
     def result_color(r):
