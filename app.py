@@ -736,20 +736,20 @@ elif volba == "Cross-tab":
 
     # --- Vykreslení tabulky ---
     st.markdown(f"""
-    <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:0.85rem;">
-        <tr style="background:#111; color:#aaa;">
-            <th style="text-align:left; padding:6px 8px;">Tým</th>
-            <th style="text-align:center; padding:6px 8px;">Výsledek</th>
-            <th style="text-align:center; padding:6px 8px;">Fauly +</th>
-            <th style="text-align:center; padding:6px 8px;">Fauly -</th>
-            <th style="text-align:center; padding:6px 8px;">ŽK +</th>
-            <th style="text-align:center; padding:6px 8px;">ŽK -</th>
-            <th style="text-align:center; padding:6px 8px;">Rohy +</th>
-            <th style="text-align:center; padding:6px 8px;">Rohy -</th>
-        </tr>
-        {rows_html}
-    </table>
-    """, unsafe_allow_html=True)
+        <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:0.85rem;">
+            <tr style="background:#111; color:#aaa;">
+                <th style="text-align:left; padding:6px 8px;">Tým</th>
+                <th style="text-align:center; padding:6px 8px;">Výsledek</th>
+                <th style="text-align:center; padding:6px 8px;">Fauly +</th>
+                <th style="text-align:center; padding:6px 8px;">Fauly -</th>
+                <th style="text-align:center; padding:6px 8px;">ŽK +</th>
+                <th style="text-align:center; padding:6px 8px;">ŽK -</th>
+                <th style="text-align:center; padding:6px 8px;">Rohy +</th>
+                <th style="text-align:center; padding:6px 8px;">Rohy -</th>
+            </tr>
+            {rows_html}
+        </table>
+        """, unsafe_allow_html=True)
 
 # --- 5. ROZHODČÍ ---
 elif volba == "Rozhodčí":
