@@ -1103,17 +1103,17 @@ elif volba == "ML predikce":
             f"""
             <div style="
                 background:{color};
-                padding:6px 8px;
-                border-radius:5px;
-                margin-bottom:6px;
+                padding:4px 6px;
+                border-radius:4px;
+                margin-bottom:4px;
                 text-align:center;
-                font-size:0.80rem;
+                font-size:0.75rem;
                 font-weight:600;
-                line-height:1.1;
+                line-height:1.0;
                 width:100%;
             ">
                 {title}<br>
-                <span style="font-size:1.05rem; font-weight:700;">{value:.2f}</span>
+                <span style="font-size:0.95rem; font-weight:700;">{value:.2f}</span>
             </div>
             """,
             unsafe_allow_html=True
