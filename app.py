@@ -1121,22 +1121,22 @@ elif volba == "ML predikce":
             unsafe_allow_html=True
         )
 
-# --- Párované dlaždice ---
-pairs = [
-    ("Fauly domácí", preds["fouls_home"], "Fauly hosté", preds["fouls_away"]),
-    ("Karty domácí", preds["cards_home"], "Karty hosté", preds["cards_away"]),
-    ("Rohy domácí", preds["corners_home"], "Rohy hosté", preds["corners_away"]),
-    ("Góly domácí", preds["goals_home"], "Góly hosté", preds["goals_away"]),
-]
+    # --- Párované dlaždice ---
+    pairs = [
+        ("Fauly domácí", preds["fouls_home"], "Fauly hosté", preds["fouls_away"]),
+        ("Karty domácí", preds["cards_home"], "Karty hosté", preds["cards_away"]),
+        ("Rohy domácí", preds["corners_home"], "Rohy hosté", preds["corners_away"]),
+        ("Góly domácí", preds["goals_home"], "Góly hosté", preds["goals_away"]),
+    ]
 
-colors = ["#2e7d32", "#0277bd", "#6a1b9a", "#c62828"]
+    colors = ["#2e7d32", "#0277bd", "#6a1b9a", "#c62828"]
 
-for i, (h_title, h_val, a_title, a_val) in enumerate(pairs):
-    col1, col2 = st.columns(2)
-    with col1:
-        card_small(h_title, h_val, colors[i])
-    with col2:
-        card_small(a_title, a_val, colors[i])
+    for i, (h_title, h_val, a_title, a_val) in enumerate(pairs):
+        col1, col2 = st.columns(2)
+        with col1:
+            card_small(h_title, h_val, colors[i])
+        with col2:
+            card_small(a_title, a_val, colors[i])
 
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
