@@ -1126,7 +1126,6 @@ elif volba == "ML predikce":
                 </div>
             </td>
         </tr>
-
         <tr>
             <td>
                 <div style='{style_box}'>
@@ -1141,7 +1140,6 @@ elif volba == "ML predikce":
                 </div>
             </td>
         </tr>
-
         <tr>
             <td>
                 <div style='{style_box}'>
@@ -1156,7 +1154,6 @@ elif volba == "ML predikce":
                 </div>
             </td>
         </tr>
-
         <tr>
             <td>
                 <div style='{style_box}'>
@@ -1173,7 +1170,6 @@ elif volba == "ML predikce":
         </tr>
     </table>
     """
-
     st.markdown(html, unsafe_allow_html=True)
 
     
