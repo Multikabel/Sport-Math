@@ -975,10 +975,6 @@ elif volba == "Rozhodčí":
 
 # --- ML PREDIKCE ---
 elif volba == "ML predikce":
-    import os
-    st.write("Working directory:", os.getcwd())
-    import os
-    st.write("Files in working dir:", os.listdir(os.getcwd()))
     st.markdown("## 🤖 ML predikce – fauly, karty, rohy, góly")
 
     # --- Výběr týmů ---
@@ -1004,16 +1000,15 @@ elif volba == "ML predikce":
 
     models = {}
     for key, file in model_names.items():
+        import traceback
+
         try:
-            import os
-            MODEL_DIR = "/workspaces/Sport-Math"
-
-            with open(os.path.join(MODEL_DIR, file), "rb") as f:
+            with open(file, "rb") as f:
                 models[key] = pickle.load(f)
-        except:
-            st.error(f"Model {file} nebyl nalezen.")
+        except Exception as e:
+            st.error(f"Chyba při načítání modelu {file}: {e}")
+            st.code(traceback.format_exc())
             st.stop()
-
     # --- Funkce pro výpočet featur ---
     def compute_features(team_home, team_away):
 
