@@ -119,7 +119,13 @@ LOGA_TYMU = {
     "Parma": "https://crests.football-data.org/112.png",
     "Venezia": "https://crests.football-data.org/1104.png"
 }
-
+LOGA_TYMU_SERIE_A_UPDATE = {
+    "Milan": "https://crests.football-data.org/98.png",
+    "Como": "https://crests.football-data.org/1904.png",
+    "Cremonese": "https://crests.football-data.org/4502.png",
+    "Lecce": "https://crests.football-data.org/457.png",
+    "Pisa": "https://crests.football-data.org/1109.png",
+}
 @st.cache_data(ttl=3600)
 def nacti_data(liga):
     url_map = {
