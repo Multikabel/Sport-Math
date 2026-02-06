@@ -1006,13 +1006,27 @@ elif volba == "Rozhodčí":
 elif volba == "ML predikce":
     st.markdown("## 🤖 ML predikce – fauly, karty, rohy, góly")
 
-    # --- Výběr týmů ---
-    col1, col2 = st.columns(2)
-    with col1:
-        home = st.selectbox("Domácí tým", týmy_seznam)
-    with col2:
-        away = st.selectbox("Hostující tým", týmy_seznam)
+    # --- Výběr týmů v pop-up okně ---
+    if "show_team_picker" not in st.session_state:
+        st.session_state.show_team_picker = False
 
+    if st.button("Vybrat týmy"):
+        st.session_state.show_team_picker = True
+
+    if st.session_state.show_team_picker:
+        with st.popover("Výběr týmů"):
+            col1, col2 = st.columns(2)
+            with col1:
+                home = st.selectbox("Domácí tým", týmy_seznam, key="home_team")
+            with col2:
+                away = st.selectbox("Hostující tým", týmy_seznam, key="away_team")
+
+            if st.button("Potvrdit"):
+                st.session_state.show_team_picker = False
+    else:
+        home = st.session_state.get("home_team", týmy_seznam[0])
+        away = st.session_state.get("away_team", týmy_seznam[1])
+        
     # --- Načtení modelů ---
     import pickle
 
