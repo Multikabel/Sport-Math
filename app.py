@@ -977,6 +977,8 @@ elif volba == "Rozhodčí":
 elif volba == "ML predikce":
     import os
     st.write("Working directory:", os.getcwd())
+    import os
+    st.write("Files in working dir:", os.listdir(os.getcwd()))
     st.markdown("## 🤖 ML predikce – fauly, karty, rohy, góly")
 
     # --- Výběr týmů ---
