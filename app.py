@@ -1098,49 +1098,85 @@ elif volba == "ML predikce":
 
     # --- Vykreslení výsledků ---
 
-    # --- Styl boxů jako v simulátoru ---
-    style_box = """
-        background-color: #2b3035;
-        padding: 12px;
-        border-radius: 10px;
-        color: white;
-        margin-bottom: 6px;
-        text-align: center;
-        border: 1px solid #444;
-    """
+    # --- Styl boxů ---
+style_box = """
+    background-color: #2b3035;
+    padding: 12px;
+    border-radius: 10px;
+    color: white;
+    text-align: center;
+    border: 1px solid #444;
+    width: 100%;
+"""
 
-    def stat_box(title, value, color):
-        st.markdown(
-            f"""
-            <div style="{style_box}">
-                <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">
-                    {title}
-                </div>
-                <div style="font-size: 1.4rem; font-weight: bold; color:{color};">
-                    {value:.2f}
-                </div>
+# --- HTML tabulka ---
+html = f"""
+<table style="width:100%; border-collapse: separate; border-spacing: 10px;">
+    <tr>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Fauly domácí</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#4dabf7;">{preds["fouls_home"]:.2f}</div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </td>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Fauly hosté</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#ff6b6b;">{preds["fouls_away"]:.2f}</div>
+            </div>
+        </td>
+    </tr>
 
-    # --- Párované boxy ---
-    pairs = [
-        ("Fauly domácí", preds["fouls_home"], "Fauly hosté", preds["fouls_away"]),
-        ("Karty domácí", preds["cards_home"], "Karty hosté", preds["cards_away"]),
-        ("Rohy domácí", preds["corners_home"], "Rohy hosté", preds["corners_away"]),
-        ("Góly domácí", preds["goals_home"], "Góly hosté", preds["goals_away"]),
-    ]
+    <tr>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Karty domácí</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#ffd43b;">{preds["cards_home"]:.2f}</div>
+            </div>
+        </td>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Karty hosté</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#ffd43b;">{preds["cards_away"]:.2f}</div>
+            </div>
+        </td>
+    </tr>
 
-    colors = ["#4dabf7", "#ffd43b", "#b197fc", "#ff6b6b"]
+    <tr>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Rohy domácí</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#b197fc;">{preds["corners_home"]:.2f}</div>
+            </div>
+        </td>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Rohy hosté</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#b197fc;">{preds["corners_away"]:.2f}</div>
+            </div>
+        </td>
+    </tr>
 
-    for i, (h_title, h_val, a_title, a_val) in enumerate(pairs):
-        col1, col2 = st.columns(2)
-        with col1:
-            stat_box(h_title, h_val, colors[i])
-        with col2:
-            stat_box(a_title, a_val, colors[i])
+    <tr>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Góly domácí</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#69db7c;">{preds["goals_home"]:.2f}</div>
+            </div>
+        </td>
+        <td>
+            <div style='{style_box}'>
+                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Góly hosté</div>
+                <div style="font-size:1.4rem; font-weight:bold; color:#ff6b6b;">{preds["goals_away"]:.2f}</div>
+            </div>
+        </td>
+    </tr>
+</table>
+"""
 
+st.markdown(html, unsafe_allow_html=True)
+
+    
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 
 elif volba == "Simulátor zápasů":
