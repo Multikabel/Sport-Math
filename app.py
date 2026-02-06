@@ -1102,15 +1102,16 @@ elif volba == "ML predikce":
         st.markdown(
             f"""
             <div style="
+                display:inline-block;
                 background:{color};
                 padding:4px 6px;
                 border-radius:4px;
-                margin-bottom:4px;
+                margin:2px;
                 text-align:center;
                 font-size:0.75rem;
                 font-weight:600;
                 line-height:1.0;
-                width:100%;
+                min-width:120px;
             ">
                 {title}<br>
                 <span style="font-size:0.95rem; font-weight:700;">{value:.2f}</span>
