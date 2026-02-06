@@ -1099,25 +1099,25 @@ elif volba == "ML predikce":
     # --- Vykreslení výsledků ---
 
     def card_small(title, value, color):
-    st.markdown(
-        f"""
-        <div style="
-            background:{color};
-            padding:6px 8px;
-            border-radius:5px;
-            margin-bottom:6px;
-            text-align:center;
-            font-size:0.80rem;
-            font-weight:600;
-            line-height:1.1;
-            width:100%;
-        ">
-            {title}<br>
-            <span style="font-size:1.05rem; font-weight:700;">{value:.2f}</span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        st.markdown(
+            f"""
+            <div style="
+                background:{color};
+                padding:6px 8px;
+                border-radius:5px;
+                margin-bottom:6px;
+                text-align:center;
+                font-size:0.80rem;
+                font-weight:600;
+                line-height:1.1;
+                width:100%;
+            ">
+                {title}<br>
+                <span style="font-size:1.05rem; font-weight:700;">{value:.2f}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     # --- Párované dlaždice ---
     pairs = [
