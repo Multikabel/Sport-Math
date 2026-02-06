@@ -1101,37 +1101,42 @@ elif volba == "ML predikce":
     # --- Vykreslení výsledků ---
     st.markdown("### 📊 Výsledky modelu")
 
-    def card(title, value, color):
-        st.markdown(
-            f"""
-            <div style="
-                background:{color};
-                padding:12px;
-                border-radius:8px;
-                margin-bottom:10px;
-                text-align:center;
-                font-size:1.1rem;
-                font-weight:600;">
-                {title}<br><span style="font-size:1.4rem;">{value:.2f}</span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    def card_small(title, value, color):
+    st.markdown(
+        f"""
+        <div style="
+            background:{color};
+            padding:8px;
+            border-radius:6px;
+            margin-bottom:6px;
+            text-align:center;
+            font-size:0.9rem;
+            font-weight:600;
+            width:100%;
+        ">
+            {title}<br>
+            <span style="font-size:1.2rem;">{value:.2f}</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    colA, colB = st.columns(2)
+# --- Párované dlaždice ---
+pairs = [
+    ("Fauly domácí", preds["fouls_home"], "Fauly hosté", preds["fouls_away"]),
+    ("Karty domácí", preds["cards_home"], "Karty hosté", preds["cards_away"]),
+    ("Rohy domácí", preds["corners_home"], "Rohy hosté", preds["corners_away"]),
+    ("Góly domácí", preds["goals_home"], "Góly hosté", preds["goals_away"]),
+]
 
-    with colA:
-        card("Fauly domácí", preds["fouls_home"], "#2e7d32")
-        card("Karty domácí", preds["cards_home"], "#0277bd")
-        card("Rohy domácí", preds["corners_home"], "#6a1b9a")
-        card("Góly domácí", preds["goals_home"], "#c62828")
+colors = ["#2e7d32", "#0277bd", "#6a1b9a", "#c62828"]
 
-    with colB:
-        card("Fauly hosté", preds["fouls_away"], "#2e7d32")
-        card("Karty hosté", preds["cards_away"], "#0277bd")
-        card("Rohy hosté", preds["corners_away"], "#6a1b9a")
-        card("Góly hosté", preds["goals_away"], "#c62828")
-
+for i, (h_title, h_val, a_title, a_val) in enumerate(pairs):
+    col1, col2 = st.columns(2)
+    with col1:
+        card_small(h_title, h_val, colors[i])
+    with col2:
+        card_small(a_title, a_val, colors[i])
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 
 elif volba == "Simulátor zápasů":
