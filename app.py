@@ -1098,30 +1098,33 @@ elif volba == "ML predikce":
 
     # --- Vykreslení výsledků ---
 
-    def card_small(title, value, color):
+    # --- Styl boxů jako v simulátoru ---
+    style_box = """
+        background-color: #2b3035;
+        padding: 12px;
+        border-radius: 10px;
+        color: white;
+        margin-bottom: 6px;
+        text-align: center;
+        border: 1px solid #444;
+    """
+
+    def stat_box(title, value, color):
         st.markdown(
             f"""
-            <div style="
-                background:{color};
-                padding:6px 8px;
-                border-radius:6px;
-                text-align:center;
-                font-size:0.8rem;
-                font-weight:600;
-                line-height:1.1;
-                height:60px;
-                display:flex;
-                flex-direction:column;
-                justify-content:center;
-            ">
-                {title}<br>
-                <span style="font-size:0.95rem; font-weight:700;">{value:.2f}</span>
+            <div style="{style_box}">
+                <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">
+                    {title}
+                </div>
+                <div style="font-size: 1.4rem; font-weight: bold; color:{color};">
+                    {value:.2f}
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-    # --- Párované dlaždice ---
+    # --- Párované boxy ---
     pairs = [
         ("Fauly domácí", preds["fouls_home"], "Fauly hosté", preds["fouls_away"]),
         ("Karty domácí", preds["cards_home"], "Karty hosté", preds["cards_away"]),
@@ -1129,15 +1132,14 @@ elif volba == "ML predikce":
         ("Góly domácí", preds["goals_home"], "Góly hosté", preds["goals_away"]),
     ]
 
-    colors = ["#2e7d32", "#0277bd", "#6a1b9a", "#c62828"]
+    colors = ["#4dabf7", "#ffd43b", "#b197fc", "#ff6b6b"]
 
     for i, (h_title, h_val, a_title, a_val) in enumerate(pairs):
         col1, col2 = st.columns(2)
         with col1:
-            card_small(h_title, h_val, colors[i])
+            stat_box(h_title, h_val, colors[i])
         with col2:
-            card_small(a_title, a_val, colors[i])
-
+            stat_box(a_title, a_val, colors[i])
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 
