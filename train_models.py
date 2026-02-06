@@ -18,9 +18,6 @@ feature_cols = [
     "home_avg_cards", "away_avg_cards",
     "home_avg_corners", "away_avg_corners",
     "home_avg_goals", "away_avg_goals",
-    "ref_fouls_home", "ref_fouls_away",
-    "ref_cards_home", "ref_cards_away",
-    "ref_corners_home", "ref_corners_away"
 ]
 
 X = df[feature_cols]
