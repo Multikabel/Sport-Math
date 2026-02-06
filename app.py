@@ -220,7 +220,8 @@ TEAM_NAME_MAP = {
     "Verona": "Verona",
     "Lecce": "Lecce",
     "Parma": "Parma",
-    "Venezia": "Venezia"
+    "Venezia": "Venezia",
+    "Cremonese": "Cremonese"
 }
 
 # --- WHO SCORED DATA ---
