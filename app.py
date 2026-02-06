@@ -14,6 +14,35 @@ liga = st.sidebar.selectbox(
     ["Premier League", "La Liga", "Serie A"]
 )
 
+
+def forma_numeric(team, df):
+    """
+    Vrátí číselnou formu týmu podle posledních 5 zápasů.
+    Výstup: 0–3 (čím vyšší, tím lepší forma)
+    """
+    # Zápasy doma
+    home = df[df["HomeTeam"] == team][["FTHG", "FTAG"]]
+    home["result"] = home["FTHG"] - home["FTAG"]
+
+    # Zápasy venku
+    away = df[df["AwayTeam"] == team][["FTHG", "FTAG"]]
+    away["result"] = away["FTAG"] - away["FTHG"]
+
+    # Spojit
+    results = pd.concat([home["result"], away["result"]]).sort_index(ascending=False)
+
+    # Posledních 5 zápasů
+    last5 = results.head(5)
+
+    if len(last5) == 0:
+        return 1.5  # neutrální forma
+
+    # Převod na body
+    points = last5.apply(lambda x: 3 if x > 0 else (1 if x == 0 else 0))
+
+    # Normalizace na 0–3
+    return points.mean()
+
 def poisson_pmf(k, mu):
     if mu <= 0:
         return 1.0 if k == 0 else 0.0
