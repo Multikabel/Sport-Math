@@ -975,8 +975,8 @@ elif volba == "Rozhodčí":
 
 # --- ML PREDIKCE ---
 elif volba == "ML predikce":
-import os
-st.write("Working directory:", os.getcwd())
+    import os
+    st.write("Working directory:", os.getcwd())
     st.markdown("## 🤖 ML predikce – fauly, karty, rohy, góly")
 
     # --- Výběr týmů ---
