@@ -1006,27 +1006,25 @@ elif volba == "Rozhodčí":
 elif volba == "ML predikce":
     st.markdown("## 🤖 ML predikce – fauly, karty, rohy, góly")
 
-    # --- Výběr týmů v pop-up okně ---
-    if "show_team_picker" not in st.session_state:
-        st.session_state.show_team_picker = False
+    # --- VÝBĚR TÝMŮ PRO ML (STEJNĚ JAKO V SIMULÁTORU) ---
+    if 'ml_team_home' not in st.session_state:
+        st.session_state.ml_team_home = týmy_seznam[0]
+    if 'ml_team_away' not in st.session_state:
+        st.session_state.ml_team_away = týmy_seznam[1]
 
-    if st.button("Vybrat týmy"):
-        st.session_state.show_team_picker = True
+    c1, c2 = st.columns(2)
 
-    if st.session_state.show_team_picker:
-        with st.popover("Výběr týmů"):
-            col1, col2 = st.columns(2)
-            with col1:
-                home = st.selectbox("Domácí tým", týmy_seznam, key="home_team")
-            with col2:
-                away = st.selectbox("Hostující tým", týmy_seznam, key="away_team")
+    with c1:
+        with st.popover(f"🏠 Domácí: {st.session_state.ml_team_home}", use_container_width=True):
+            st.radio("Domácí tým:", týmy_seznam, key="ml_team_home")
 
-            if st.button("Potvrdit"):
-                st.session_state.show_team_picker = False
-    else:
-        home = st.session_state.get("home_team", týmy_seznam[0])
-        away = st.session_state.get("away_team", týmy_seznam[1])
-        
+    with c2:
+        with st.popover(f"✈️ Hosté: {st.session_state.ml_team_away}", use_container_width=True):
+            st.radio("Hostující tým:", týmy_seznam, key="ml_team_away")
+
+    home = st.session_state.ml_team_home
+    away = st.session_state.ml_team_away
+   
     # --- Načtení modelů ---
     import pickle
 
