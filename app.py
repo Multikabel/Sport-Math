@@ -190,14 +190,13 @@ TEAM_NAME_MAP = {
     "Osasuna": "Osasuna",
     "Sevilla": "Sevilla",
     "Rayo Vallecano": "Vallecano",
-    "Rayo Vallecano": "Rayo Vallecano",
     "Getafe": "Getafe",
     "Celta Vigo": "Celta",
     "Mallorca": "Mallorca",
     "Alavés": "Alaves",
     "Las Palmas": "Las Palmas",
     "Leganés": "Leganes",
-    "Espanyol": "Espanyol",
+    "Espanyol": "Espanol",
     "Valladolid": "Valladolid",
 
     # Serie A
