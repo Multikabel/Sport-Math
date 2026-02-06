@@ -392,7 +392,7 @@ def urci_silu(tym):
 # --- 2. NAVIGACE ---
 st.sidebar.title("⚽ SPORT-MATH")
 
-volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Cross-tab", "Rozhodčí", "Simulátor zápasů"])
+volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Cross-tab", "Rozhodčí", "ML Predikce", "Simulátor zápasů"])
 
 # --- 3. SEKCE: TABULKA PL ---
 if volba == "Tabulka PL":
@@ -972,6 +972,121 @@ elif volba == "Rozhodčí":
         """, unsafe_allow_html=True)
 
 
+
+# --- ML PREDIKCE ---
+elif volba == "ML predikce":
+
+    st.markdown("## 🤖 ML predikce – fauly, karty, rohy, góly")
+
+    # --- Výběr týmů ---
+    col1, col2 = st.columns(2)
+    with col1:
+        home = st.selectbox("Domácí tým", týmy_seznam)
+    with col2:
+        away = st.selectbox("Hostující tým", týmy_seznam)
+
+    # --- Načtení modelů ---
+    import pickle
+
+    model_names = {
+        "fouls_home": "target_fouls_home.pkl",
+        "fouls_away": "target_fouls_away.pkl",
+        "cards_home": "target_cards_home.pkl",
+        "cards_away": "target_cards_away.pkl",
+        "corners_home": "target_corners_home.pkl",
+        "corners_away": "target_corners_away.pkl",
+        "goals_home": "target_goals_home.pkl",
+        "goals_away": "target_goals_away.pkl",
+    }
+
+    models = {}
+    for key, file in model_names.items():
+        try:
+            with open(file, "rb") as f:
+                models[key] = pickle.load(f)
+        except:
+            st.error(f"Model {file} nebyl nalezen.")
+            st.stop()
+
+    # --- Funkce pro výpočet featur ---
+    def compute_features(team_home, team_away):
+
+        # Síla
+        hs = urci_silu(team_home)
+        as_ = urci_silu(team_away)
+        hs = {"A": 3, "B": 2, "C": 1}.get(hs, 2)
+        as_ = {"A": 3, "B": 2, "C": 1}.get(as_, 2)
+
+        # Forma
+        hf = forma_numeric(team_home, df_hist)
+        af = forma_numeric(team_away, df_hist)
+
+        # Průměry
+        def avg(team, col_home, col_away):
+            mask_h = df_hist["HomeTeam"] == team
+            mask_a = df_hist["AwayTeam"] == team
+            total = df_hist[mask_h][col_home].sum() + df_hist[mask_a][col_away].sum()
+            count = mask_h.sum() + mask_a.sum()
+            return total / count if count > 0 else 0
+
+        features = {
+            "home_strength": hs,
+            "away_strength": as_,
+            "home_form": hf,
+            "away_form": af,
+            "home_avg_fouls": avg(team_home, "HF", "AF"),
+            "away_avg_fouls": avg(team_away, "AF", "HF"),
+            "home_avg_cards": avg(team_home, "HY", "AY"),
+            "away_avg_cards": avg(team_away, "AY", "HY"),
+            "home_avg_corners": avg(team_home, "HC", "AC"),
+            "away_avg_corners": avg(team_away, "AC", "HC"),
+            "home_avg_goals": avg(team_home, "FTHG", "FTAG"),
+            "away_avg_goals": avg(team_away, "FTAG", "FTHG"),
+        }
+
+        return pd.DataFrame([features])
+
+    # --- Výpočet featur ---
+    X = compute_features(home, away)
+
+    # --- Predikce ---
+    preds = {}
+    for key, model in models.items():
+        preds[key] = float(model.predict(X)[0])
+
+    # --- Vykreslení výsledků ---
+    st.markdown("### 📊 Výsledky modelu")
+
+    def card(title, value, color):
+        st.markdown(
+            f"""
+            <div style="
+                background:{color};
+                padding:12px;
+                border-radius:8px;
+                margin-bottom:10px;
+                text-align:center;
+                font-size:1.1rem;
+                font-weight:600;">
+                {title}<br><span style="font-size:1.4rem;">{value:.2f}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    colA, colB = st.columns(2)
+
+    with colA:
+        card("Fauly domácí", preds["fouls_home"], "#2e7d32")
+        card("Karty domácí", preds["cards_home"], "#0277bd")
+        card("Rohy domácí", preds["corners_home"], "#6a1b9a")
+        card("Góly domácí", preds["goals_home"], "#c62828")
+
+    with colB:
+        card("Fauly hosté", preds["fouls_away"], "#2e7d32")
+        card("Karty hosté", preds["cards_away"], "#0277bd")
+        card("Rohy hosté", preds["corners_away"], "#6a1b9a")
+        card("Góly hosté", preds["goals_away"], "#c62828")
 
 # --- 6. SIMULÁTOR ZÁPASŮ ---
 
