@@ -2,3 +2,7 @@
 pandas
 requests
 scipy
+scikit-learn
+numpy
+streamlit
+
