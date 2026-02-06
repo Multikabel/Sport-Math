@@ -1105,7 +1105,7 @@ elif volba == "ML predikce":
         border-radius: 10px;
         color: white;
         text-align: center;
-        border: 1px solid #444;
+        border: 0px solid #444;
         width: 100%;
     """
 
