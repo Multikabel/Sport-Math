@@ -1099,82 +1099,82 @@ elif volba == "ML predikce":
     # --- Vykreslení výsledků ---
 
     # --- Styl boxů ---
-style_box = """
-    background-color: #2b3035;
-    padding: 12px;
-    border-radius: 10px;
-    color: white;
-    text-align: center;
-    border: 1px solid #444;
-    width: 100%;
-"""
+    style_box = """
+        background-color: #2b3035;
+        padding: 12px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        border: 1px solid #444;
+        width: 100%;
+    """
 
-# --- HTML tabulka ---
-html = f"""
-<table style="width:100%; border-collapse: separate; border-spacing: 10px;">
-    <tr>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Fauly domácí</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#4dabf7;">{preds["fouls_home"]:.2f}</div>
-            </div>
-        </td>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Fauly hosté</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#ff6b6b;">{preds["fouls_away"]:.2f}</div>
-            </div>
-        </td>
-    </tr>
+    # --- HTML tabulka ---
+    html = f"""
+    <table style="width:100%; border-collapse: separate; border-spacing: 10px;">
+        <tr>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Fauly domácí</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#4dabf7;">{preds["fouls_home"]:.2f}</div>
+                </div>
+            </td>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Fauly hosté</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#ff6b6b;">{preds["fouls_away"]:.2f}</div>
+                </div>
+            </td>
+        </tr>
 
-    <tr>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Karty domácí</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#ffd43b;">{preds["cards_home"]:.2f}</div>
-            </div>
-        </td>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Karty hosté</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#ffd43b;">{preds["cards_away"]:.2f}</div>
-            </div>
-        </td>
-    </tr>
+        <tr>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Karty domácí</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#ffd43b;">{preds["cards_home"]:.2f}</div>
+                </div>
+            </td>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Karty hosté</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#ffd43b;">{preds["cards_away"]:.2f}</div>
+                </div>
+            </td>
+        </tr>
 
-    <tr>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Rohy domácí</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#b197fc;">{preds["corners_home"]:.2f}</div>
-            </div>
-        </td>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Rohy hosté</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#b197fc;">{preds["corners_away"]:.2f}</div>
-            </div>
-        </td>
-    </tr>
+        <tr>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Rohy domácí</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#b197fc;">{preds["corners_home"]:.2f}</div>
+                </div>
+            </td>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Rohy hosté</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#b197fc;">{preds["corners_away"]:.2f}</div>
+                </div>
+            </td>
+        </tr>
 
-    <tr>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Góly domácí</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#69db7c;">{preds["goals_home"]:.2f}</div>
-            </div>
-        </td>
-        <td>
-            <div style='{style_box}'>
-                <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Góly hosté</div>
-                <div style="font-size:1.4rem; font-weight:bold; color:#ff6b6b;">{preds["goals_away"]:.2f}</div>
-            </div>
-        </td>
-    </tr>
-</table>
-"""
+        <tr>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Góly domácí</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#69db7c;">{preds["goals_home"]:.2f}</div>
+                </div>
+            </td>
+            <td>
+                <div style='{style_box}'>
+                    <div style="font-size:0.7rem; color:#aaa; text-transform:uppercase;">Góly hosté</div>
+                    <div style="font-size:1.4rem; font-weight:bold; color:#ff6b6b;">{preds["goals_away"]:.2f}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    """
 
-st.markdown(html, unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
     
 # --- 6. SIMULÁTOR ZÁPASŮ ---
