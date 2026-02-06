@@ -1099,7 +1099,7 @@ elif volba == "ML predikce":
     # --- Vykreslení výsledků ---
 
     def card_small(title, value, color):
-        st.html(
+        st.markdown(
             f"""
             <div style="
                 background:{color};
