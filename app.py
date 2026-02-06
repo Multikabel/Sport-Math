@@ -392,7 +392,7 @@ def urci_silu(tym):
 # --- 2. NAVIGACE ---
 st.sidebar.title("⚽ SPORT-MATH")
 
-volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Cross-tab", "Rozhodčí", "ML Predikce", "Simulátor zápasů"])
+volba = st.sidebar.radio("Sekce:", ["Tabulka PL", "Týmové statistiky", "Cross-tab", "Rozhodčí", "ML predikce", "Simulátor zápasů"])
 
 # --- 3. SEKCE: TABULKA PL ---
 if volba == "Tabulka PL":
