@@ -1101,24 +1101,24 @@ elif volba == "ML predikce":
     # --- Vykreslení výsledků ---
 
     def card_small(title, value, color):
-    st.markdown(
-        f"""
-        <div style="
-            background:{color};
-            padding:8px;
-            border-radius:6px;
-            margin-bottom:6px;
-            text-align:center;
-            font-size:0.9rem;
-            font-weight:600;
-            width:100%;
-        ">
-            {title}<br>
-            <span style="font-size:1.2rem;">{value:.2f}</span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        st.markdown(
+            f"""
+            <div style="
+                background:{color};
+                padding:8px;
+                border-radius:6px;
+                margin-bottom:6px;
+                text-align:center;
+                font-size:0.9rem;
+                font-weight:600;
+                width:100%;
+            ">
+                {title}<br>
+                <span style="font-size:1.2rem;">{value:.2f}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     # --- Párované dlaždice ---
     pairs = [
