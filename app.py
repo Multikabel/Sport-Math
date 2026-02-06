@@ -1004,10 +1004,10 @@ elif volba == "ML predikce":
     for key, file in model_names.items():
         try:
             import os
-                MODEL_DIR = "/workspaces/Sport-Math"
+            MODEL_DIR = "/workspaces/Sport-Math"
 
-                with open(os.path.join(MODEL_DIR, file), "rb") as f:
-                    models[key] = pickle.load(f)
+            with open(os.path.join(MODEL_DIR, file), "rb") as f:
+                models[key] = pickle.load(f)
         except:
             st.error(f"Model {file} nebyl nalezen.")
             st.stop()
