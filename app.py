@@ -96,7 +96,14 @@ LOGA_TYMU = {
     "Leganes": "https://crests.football-data.org/745.png",
     "Espanyol": "https://crests.football-data.org/80.png",
     "Valladolid": "https://crests.football-data.org/250.png",
-
+    "Atlético Madrid": "https://crests.football-data.org/78.png",
+    "Espanyol": "https://crests.football-data.org/80.png",
+    "Real Sociedad": "https://crests.football-data.org/92.png",
+    "Elche": "https://crests.football-data.org/285.png",
+    "Rayo Vallecano": "https://crests.football-data.org/87.png",
+    "Levante": "https://crests.football-data.org/88.png",
+    "Oviedo": "https://crests.football-data.org/286.png",
+    
     # --- Serie A ---
     "Inter": "https://crests.football-data.org/108.png",
     "AC Milan": "https://crests.football-data.org/98.png",
